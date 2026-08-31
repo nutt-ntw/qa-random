@@ -61,6 +61,22 @@
             border-radius: 10px;
             background: #eef1f5;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .label-count-input {
+            width: 70px;
+            padding: 8px;
+            font-size: 16px;
+        }
+
+        .label-total {
+            text-align: center;
+            color: #666;
+            font-weight: bold;
+            margin: -18px 0 30px;
         }
 
         /* Settings */
@@ -338,26 +354,35 @@
 
         <div class="label-info">
 
-            <div class="label-item">
-                เลข 1 × 5
-            </div>
+            <label class="label-item">
+                เลข 1 ×
+                <input class="label-count-input" type="number" min="0" step="1" value="5" data-number="1" oninput="updateTotalLabels()">
+            </label>
 
-            <div class="label-item">
-                เลข 2 × 3
-            </div>
+            <label class="label-item">
+                เลข 2 ×
+                <input class="label-count-input" type="number" min="0" step="1" value="3" data-number="2" oninput="updateTotalLabels()">
+            </label>
 
-            <div class="label-item">
-                เลข 3 × 1
-            </div>
+            <label class="label-item">
+                เลข 3 ×
+                <input class="label-count-input" type="number" min="0" step="1" value="1" data-number="3" oninput="updateTotalLabels()">
+            </label>
 
-            <div class="label-item">
-                เลข 4 × 3
-            </div>
+            <label class="label-item">
+                เลข 4 ×
+                <input class="label-count-input" type="number" min="0" step="1" value="3" data-number="4" oninput="updateTotalLabels()">
+            </label>
 
-            <div class="label-item">
-                เลข 5 × 5
-            </div>
+            <label class="label-item">
+                เลข 5 ×
+                <input class="label-count-input" type="number" min="0" step="1" value="5" data-number="5" oninput="updateTotalLabels()">
+            </label>
 
+        </div>
+
+        <div class="label-total">
+            รวม <span id="totalLabels">17</span> ใบ
         </div>
 
 
@@ -392,7 +417,7 @@
                     id="drawCount"
                     min="1"
                     max="17"
-                    value="3"
+                    value="17"
                 >
 
             </div>
@@ -541,34 +566,9 @@
 <script>
 
 
-/*
-==================================================
-ฉลากทั้งหมด
-==================================================
+/* ฉลากสำหรับการสุ่มชุดปัจจุบัน */
 
-เลข 1 = 5 ใบ
-เลข 2 = 3 ใบ
-เลข 3 = 1 ใบ
-เลข 4 = 3 ใบ
-เลข 5 = 5 ใบ
-
-รวม 17 ใบ
-==================================================
-*/
-
-const originalLabels = [
-
-    1, 1, 1, 1, 1,
-
-    2, 2, 2,
-
-    3,
-
-    4, 4, 4,
-
-    5, 5, 5, 5, 5
-
-];
+let activeLabels = [];
 
 
 
@@ -610,6 +610,77 @@ let historyData = [];
 
 /*
 ==================================================
+อ่านและอัปเดตจำนวนฉลาก
+==================================================
+*/
+
+function readLabelConfiguration() {
+
+    return Array.from(
+        document.querySelectorAll(".label-count-input")
+    ).map(
+        input => ({
+            number: Number(input.dataset.number),
+            count: Number(input.value)
+        })
+    );
+
+}
+
+
+function updateTotalLabels() {
+
+    const total = readLabelConfiguration()
+        .reduce(
+            (sum, item) =>
+                sum + (
+                    Number.isInteger(item.count) &&
+                    item.count >= 0
+                        ? item.count
+                        : 0
+                ),
+            0
+        );
+
+
+    document.getElementById("totalLabels")
+        .innerText = total;
+
+
+    const drawCountInput =
+        document.getElementById("drawCount");
+
+    drawCountInput.max = Math.max(total, 1);
+
+
+    if (
+        total > 0 &&
+        Number(drawCountInput.value) > total
+    ) {
+
+        drawCountInput.value = total;
+
+    }
+
+}
+
+
+function setConfigurationDisabled(disabled) {
+
+    document.querySelectorAll(
+        ".label-count-input, #totalDraws, #drawCount"
+    ).forEach(
+        input => {
+            input.disabled = disabled;
+        }
+    );
+
+}
+
+
+
+/*
+==================================================
 เริ่มสุ่ม
 ==================================================
 */
@@ -631,6 +702,44 @@ function startDrawing() {
         parseInt(
             document.getElementById("drawCount").value
         );
+
+
+    const labelConfiguration =
+        readLabelConfiguration();
+
+
+    if (
+        labelConfiguration.some(
+            item =>
+                !Number.isInteger(item.count) ||
+                item.count < 0
+        )
+    ) {
+
+        alert(
+            "จำนวนของเลขแต่ละตัวต้องเป็นจำนวนเต็มตั้งแต่ 0 ขึ้นไป"
+        );
+
+        return;
+
+    }
+
+
+    activeLabels = labelConfiguration.flatMap(
+        item =>
+            Array(item.count).fill(item.number)
+    );
+
+
+    if (activeLabels.length === 0) {
+
+        alert(
+            "กรุณากำหนดจำนวนฉลากอย่างน้อย 1 ใบ"
+        );
+
+        return;
+
+    }
 
 
     /*
@@ -658,11 +767,11 @@ function startDrawing() {
     if (
         isNaN(drawCount) ||
         drawCount < 1 ||
-        drawCount > 17
+        drawCount > activeLabels.length
     ) {
 
         alert(
-            "จำนวนใบต่อครั้งต้องอยู่ระหว่าง 1 - 17 ใบ"
+            `จำนวนใบต่อครั้งต้องอยู่ระหว่าง 1 - ${activeLabels.length} ใบ`
         );
 
         return;
@@ -683,6 +792,9 @@ function startDrawing() {
 
     document.getElementById("drawButton")
         .disabled = true;
+
+
+    setConfigurationDisabled(true);
 
 
     document.getElementById("totalDrawDisplay")
@@ -723,6 +835,10 @@ function startDrawing() {
 
 function drawNext() {
 
+    if (!isRunning) {
+        return;
+    }
+
     /*
         ถ้าสุ่มครบแล้ว
     */
@@ -753,7 +869,7 @@ function drawNext() {
     */
 
     let availableLabels =
-        [...originalLabels];
+        [...activeLabels];
 
 
     let selected = [];
@@ -1026,6 +1142,9 @@ function finishDrawing() {
 
     document.getElementById("drawButton")
         .disabled = false;
+
+
+    setConfigurationDisabled(false);
 
 
     document.getElementById("message")
@@ -1430,6 +1549,9 @@ function resetGame() {
         .disabled = false;
 
 
+    setConfigurationDisabled(false);
+
+
     /*
         Counter
     */
@@ -1521,6 +1643,9 @@ function getFileDate() {
     );
 
 }
+
+
+updateTotalLabels();
 
 </script>
 
