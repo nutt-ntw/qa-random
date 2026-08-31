@@ -6,6 +6,9 @@
 
     <title>โปรแกรมสุ่มจับฉลาก</title>
 
+    <!-- SheetJS สำหรับ Export Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
     <style>
 
         * {
@@ -20,7 +23,7 @@
         }
 
         .container {
-            max-width: 950px;
+            max-width: 1100px;
             margin: 40px auto;
             padding: 20px;
         }
@@ -43,6 +46,8 @@
             margin-bottom: 30px;
         }
 
+        /* ฉลาก */
+
         .label-info {
             display: flex;
             justify-content: center;
@@ -57,6 +62,8 @@
             background: #eef1f5;
             font-weight: bold;
         }
+
+        /* Settings */
 
         .settings {
             display: flex;
@@ -85,10 +92,13 @@
             border-radius: 10px;
         }
 
+        /* Buttons */
+
         .buttons {
             display: flex;
             justify-content: center;
             gap: 12px;
+            flex-wrap: wrap;
             margin-bottom: 25px;
         }
 
@@ -106,15 +116,15 @@
             transform: translateY(-2px);
         }
 
+        button:disabled {
+            background: #9ca3af !important;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .draw-btn {
             background: #2563eb;
             color: white;
-        }
-
-        .draw-btn:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-            transform: none;
         }
 
         .reset-btn {
@@ -122,16 +132,22 @@
             color: #222;
         }
 
-        .download-btn {
-            background: #059669;
+        .csv-btn {
+            background: #16a34a;
             color: white;
         }
 
-        .download-btn:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-            transform: none;
+        .excel-btn {
+            background: #15803d;
+            color: white;
         }
+
+        .copy-btn {
+            background: #7c3aed;
+            color: white;
+        }
+
+        /* Status */
 
         .status {
             text-align: center;
@@ -142,6 +158,8 @@
         .status span {
             font-weight: bold;
         }
+
+        /* Result */
 
         .result-box {
             min-height: 220px;
@@ -198,30 +216,69 @@
 
         }
 
-        .history-title {
-            margin-bottom: 10px;
+        /* History */
+
+        .history-section {
+            margin-top: 30px;
         }
 
-        .history {
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .history-header h3 {
+            margin: 0;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .export-buttons button {
+            padding: 10px 15px;
+            font-size: 14px;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
             background: #f8fafc;
             border-radius: 12px;
-            padding: 15px;
-            max-height: 350px;
-            overflow-y: auto;
         }
 
-        .history-item {
-            padding: 12px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 500px;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: center;
             border-bottom: 1px solid #e5e7eb;
         }
 
-        .history-item:last-child {
+        th {
+            background: #e5e7eb;
+            font-weight: bold;
+        }
+
+        tr:last-child td {
             border-bottom: none;
         }
 
         .empty {
             color: #999;
             text-align: center;
+            padding: 25px;
         }
 
         .message {
@@ -229,6 +286,8 @@
             margin-top: 20px;
             font-weight: bold;
         }
+
+        /* Mobile */
 
         @media (max-width: 600px) {
 
@@ -245,6 +304,15 @@
                 width: 70px;
                 height: 70px;
                 font-size: 30px;
+            }
+
+            .history-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .export-buttons {
+                justify-content: center;
             }
 
         }
@@ -352,16 +420,6 @@
                 🔄 Reset
             </button>
 
-
-            <button
-                class="download-btn"
-                id="downloadButton"
-                onclick="downloadResultsCsv()"
-                disabled
-            >
-                ⬇️ ดาวน์โหลด CSV
-            </button>
-
         </div>
 
 
@@ -370,31 +428,24 @@
         <div class="status">
 
             สุ่มไปแล้ว:
-            <span id="currentDraw">
-                0
-            </span>
+            <span id="currentDraw">0</span>
 
             /
 
-            <span id="totalDrawDisplay">
-                5
-            </span>
+            <span id="totalDrawDisplay">5</span>
 
             ครั้ง
 
         </div>
 
 
-        <!-- Result -->
+        <!-- ผลการสุ่ม -->
 
         <div class="result-box">
 
             <div class="result-title">
-
                 ผลการสุ่มครั้งล่าสุด
-
             </div>
-
 
             <div
                 class="results"
@@ -402,9 +453,7 @@
             >
 
                 <div class="empty">
-
                     กดปุ่ม "เริ่มสุ่ม"
-
                 </div>
 
             </div>
@@ -412,23 +461,66 @@
         </div>
 
 
-        <!-- History -->
+        <!-- ประวัติ -->
 
-        <h3 class="history-title">
+        <div class="history-section">
 
-            📋 ประวัติการสุ่ม
+            <div class="history-header">
 
-        </h3>
+                <h3>
+                    📋 ประวัติการสุ่ม
+                </h3>
 
 
-        <div
-            class="history"
-            id="history"
-        >
+                <div class="export-buttons">
 
-            <div class="empty">
+                    <button
+                        class="copy-btn"
+                        onclick="copyToExcel()"
+                    >
+                        📋 Copy สำหรับ Excel
+                    </button>
 
-                ยังไม่มีประวัติ
+
+                    <button
+                        class="csv-btn"
+                        onclick="exportCSV()"
+                    >
+                        📄 Export CSV
+                    </button>
+
+
+                    <button
+                        class="excel-btn"
+                        onclick="exportExcel()"
+                    >
+                        📊 Export Excel
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="table-wrapper">
+
+                <table id="historyTable">
+
+                    <thead>
+                        <tr id="tableHeader">
+                            <th>ครั้งที่</th>
+                            <th>ผลที่ 1</th>
+                            <th>ผลที่ 2</th>
+                            <th>ผลที่ 3</th>
+                            <th>จำนวนใบ</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="historyBody">
+
+                    </tbody>
+
+                </table>
 
             </div>
 
@@ -451,14 +543,14 @@
 
 /*
 ==================================================
-จำนวนฉลากต้นฉบับ
+ฉลากทั้งหมด
 ==================================================
 
-1 = 5 ใบ
-2 = 3 ใบ
-3 = 1 ใบ
-4 = 3 ใบ
-5 = 5 ใบ
+เลข 1 = 5 ใบ
+เลข 2 = 3 ใบ
+เลข 3 = 1 ใบ
+เลข 4 = 3 ใบ
+เลข 5 = 5 ใบ
 
 รวม 17 ใบ
 ==================================================
@@ -482,7 +574,7 @@ const originalLabels = [
 
 /*
 ==================================================
-ตัวแปรระบบ
+ตัวแปร
 ==================================================
 */
 
@@ -494,13 +586,31 @@ let drawCount = 0;
 
 let isRunning = false;
 
-let drawHistory = [];
+
+/*
+เก็บประวัติทั้งหมด
+
+ตัวอย่าง:
+
+[
+    {
+        draw: 1,
+        results: [1,5,2]
+    },
+    {
+        draw: 2,
+        results: [4,1,5]
+    }
+]
+*/
+
+let historyData = [];
 
 
 
 /*
 ==================================================
-เริ่มการสุ่ม
+เริ่มสุ่ม
 ==================================================
 */
 
@@ -561,28 +671,38 @@ function startDrawing() {
 
 
     /*
-        Reset ตัวนับ
+        Reset
     */
 
     currentDraw = 0;
 
+    historyData = [];
+
     isRunning = true;
 
-
-    /*
-        Disable ปุ่ม
-    */
 
     document.getElementById("drawButton")
         .disabled = true;
 
 
-    /*
-        แสดงจำนวนครั้ง
-    */
-
     document.getElementById("totalDrawDisplay")
         .innerText = totalDraws;
+
+
+    /*
+        สร้าง Header ตาราง
+        ตามจำนวนใบที่กำหนด
+    */
+
+    createTableHeader();
+
+
+    /*
+        ล้างประวัติเดิม
+    */
+
+    document.getElementById("historyBody")
+        .innerHTML = "";
 
 
     /*
@@ -616,10 +736,6 @@ function drawNext() {
     }
 
 
-    /*
-        เพิ่มจำนวนครั้ง
-    */
-
     currentDraw++;
 
 
@@ -628,27 +744,23 @@ function drawNext() {
 
 
     /*
-        สำคัญมาก
+        สำคัญ
 
-        ทุกครั้งที่เริ่มสุ่ม
-        จะสร้างฉลากใหม่จาก originalLabels
+        ทุกครั้งสร้างฉลากใหม่
 
-        ดังนั้นแต่ละรอบจะเป็นอิสระจากกัน
+        ดังนั้นแต่ละการสุ่ม
+        เป็นรอบใหม่อิสระจากกัน
     */
 
     let availableLabels =
         [...originalLabels];
 
 
-    /*
-        Array สำหรับเก็บผลครั้งนี้
-    */
-
     let selected = [];
 
 
     /*
-        สุ่มตามจำนวนใบที่กำหนด
+        สุ่มตามจำนวนใบ
     */
 
     for (
@@ -657,26 +769,12 @@ function drawNext() {
         i++
     ) {
 
-
-        /*
-            สุ่มตำแหน่ง
-            จากใบที่ยังไม่ได้หยิบ
-        */
-
         const randomIndex =
             Math.floor(
                 Math.random() *
                 availableLabels.length
             );
 
-
-        /*
-            หยิบใบออกจาก array
-
-            splice ทำให้ใบนี้
-            ไม่สามารถถูกหยิบซ้ำ
-            ในรอบเดียวกันได้
-        */
 
         const picked =
             availableLabels.splice(
@@ -691,6 +789,19 @@ function drawNext() {
 
 
     /*
+        บันทึกประวัติ
+    */
+
+    historyData.push({
+
+        draw: currentDraw,
+
+        results: selected
+
+    });
+
+
+    /*
         แสดงผล
     */
 
@@ -698,18 +809,17 @@ function drawNext() {
 
 
     /*
-        บันทึกประวัติ
+        เพิ่มลงตาราง
     */
 
-    addHistory(
+    addHistoryRow(
         currentDraw,
         selected
     );
 
 
     /*
-        ถ้ายังไม่ครบจำนวนครั้ง
-        ให้รอ 1 วินาทีแล้วสุ่มใหม่
+        สุ่มครั้งต่อไป
     */
 
     if (currentDraw < totalDraws) {
@@ -731,7 +841,142 @@ function drawNext() {
 
 /*
 ==================================================
-แสดงผลการสุ่ม
+สร้าง Header ตาราง
+==================================================
+*/
+
+function createTableHeader() {
+
+    const header =
+        document.getElementById("tableHeader");
+
+
+    header.innerHTML = "";
+
+
+    /*
+        Column ครั้งที่
+    */
+
+    const thDraw =
+        document.createElement("th");
+
+    thDraw.innerText =
+        "ครั้งที่";
+
+    header.appendChild(thDraw);
+
+
+    /*
+        Column ผลลัพธ์
+    */
+
+    for (
+        let i = 1;
+        i <= drawCount;
+        i++
+    ) {
+
+        const th =
+            document.createElement("th");
+
+        th.innerText =
+            `ผลที่ ${i}`;
+
+        header.appendChild(th);
+
+    }
+
+
+    /*
+        จำนวนใบ
+    */
+
+    const thCount =
+        document.createElement("th");
+
+    thCount.innerText =
+        "จำนวนใบ";
+
+    header.appendChild(thCount);
+
+}
+
+
+
+/*
+==================================================
+เพิ่มข้อมูลในตาราง
+==================================================
+*/
+
+function addHistoryRow(
+    drawNumber,
+    selected
+) {
+
+    const tbody =
+        document.getElementById("historyBody");
+
+
+    const row =
+        document.createElement("tr");
+
+
+    /*
+        ครั้งที่
+    */
+
+    const drawCell =
+        document.createElement("td");
+
+    drawCell.innerText =
+        drawNumber;
+
+    row.appendChild(drawCell);
+
+
+    /*
+        ผลลัพธ์แต่ละใบ
+    */
+
+    selected.forEach(
+        number => {
+
+            const cell =
+                document.createElement("td");
+
+            cell.innerText =
+                number;
+
+            row.appendChild(cell);
+
+        }
+    );
+
+
+    /*
+        จำนวนใบ
+    */
+
+    const countCell =
+        document.createElement("td");
+
+    countCell.innerText =
+        selected.length;
+
+    row.appendChild(countCell);
+
+
+    tbody.appendChild(row);
+
+}
+
+
+
+/*
+==================================================
+แสดงผลล่าสุด
 ==================================================
 */
 
@@ -770,150 +1015,7 @@ function showResults(selected) {
 
 /*
 ==================================================
-เพิ่มประวัติ
-==================================================
-*/
-
-function addHistory(
-    drawNumber,
-    selected
-) {
-
-    drawHistory.push({
-        drawNumber,
-        selected: [...selected]
-    });
-
-
-    document.getElementById("downloadButton")
-        .disabled = false;
-
-    const history =
-        document.getElementById("history");
-
-
-    /*
-        ลบข้อความ
-        "ยังไม่มีประวัติ"
-    */
-
-    if (
-        history.querySelector(".empty")
-    ) {
-
-        history.innerHTML = "";
-
-    }
-
-
-    const item =
-        document.createElement("div");
-
-
-    item.className =
-        "history-item";
-
-
-    item.innerHTML =
-
-        `<strong>
-            ครั้งที่ ${drawNumber}
-        </strong>
-
-        → หยิบ ${selected.length} ใบ
-
-        → <strong>
-            ${selected.join(", ")}
-        </strong>`;
-
-
-    history.prepend(item);
-
-}
-
-
-
-/*
-==================================================
-ดาวน์โหลดผลลัพธ์เป็น CSV
-==================================================
-*/
-
-function downloadResultsCsv() {
-
-    if (drawHistory.length === 0) {
-        return;
-    }
-
-
-    const rows = [
-        ["ครั้งที่", "จำนวนใบ", "ผลการสุ่ม"],
-        ...drawHistory.map(
-            item => [
-                item.drawNumber,
-                item.selected.length,
-                item.selected.join(", ")
-            ]
-        )
-    ];
-
-
-    const csv = rows
-        .map(
-            row => row
-                .map(
-                    value =>
-                        `"${String(value).replace(/"/g, '""')}"`
-                )
-                .join(",")
-        )
-        .join("\r\n");
-
-
-    /* UTF-8 BOM ช่วยให้ Excel แสดงภาษาไทยได้ถูกต้อง */
-    const blob = new Blob(
-        ["\uFEFF", csv],
-        { type: "text/csv;charset=utf-8;" }
-    );
-
-
-    const now = new Date();
-
-    const timestamp = [
-        now.getFullYear(),
-        String(now.getMonth() + 1).padStart(2, "0"),
-        String(now.getDate()).padStart(2, "0")
-    ].join("-") + "_" + [
-        String(now.getHours()).padStart(2, "0"),
-        String(now.getMinutes()).padStart(2, "0"),
-        String(now.getSeconds()).padStart(2, "0")
-    ].join("-");
-
-
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-
-    link.href = url;
-
-    link.download =
-        `qa-random-results-${timestamp}.csv`;
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    link.remove();
-
-    URL.revokeObjectURL(url);
-
-}
-
-
-
-/*
-==================================================
-สุ่มครบตามจำนวน
+สุ่มครบ
 ==================================================
 */
 
@@ -928,8 +1030,378 @@ function finishDrawing() {
 
     document.getElementById("message")
         .innerText =
-
         `🎉 สุ่มครบ ${totalDraws} ครั้งแล้ว`;
+
+}
+
+
+
+/*
+==================================================
+Export CSV
+==================================================
+*/
+
+function exportCSV() {
+
+    if (historyData.length === 0) {
+
+        alert(
+            "ยังไม่มีประวัติสำหรับ Export"
+        );
+
+        return;
+
+    }
+
+
+    let csv = "";
+
+
+    /*
+        Header
+    */
+
+    csv += "ครั้งที่";
+
+
+    for (
+        let i = 1;
+        i <= drawCount;
+        i++
+    ) {
+
+        csv += `,ผลที่ ${i}`;
+
+    }
+
+
+    csv += ",จำนวนใบ\n";
+
+
+    /*
+        Data
+    */
+
+    historyData.forEach(
+        item => {
+
+            csv += item.draw;
+
+
+            item.results.forEach(
+                number => {
+
+                    csv += `,${number}`;
+
+                }
+            );
+
+
+            csv += `,${item.results.length}\n`;
+
+        }
+    );
+
+
+    /*
+        เพิ่ม BOM
+
+        เพื่อให้ Excel ภาษาไทย
+        ไม่กลายเป็นภาษาต่างดาว
+    */
+
+    const BOM =
+        "\uFEFF";
+
+
+    const blob =
+        new Blob(
+            [
+                BOM + csv
+            ],
+            {
+                type:
+                    "text/csv;charset=utf-8;"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(blob);
+
+
+    const link =
+        document.createElement("a");
+
+
+    link.href = url;
+
+
+    link.download =
+        `ผลการสุ่ม_${getFileDate()}.csv`;
+
+
+    link.click();
+
+
+    URL.revokeObjectURL(url);
+
+}
+
+
+
+/*
+==================================================
+Export Excel
+==================================================
+*/
+
+function exportExcel() {
+
+    if (historyData.length === 0) {
+
+        alert(
+            "ยังไม่มีประวัติสำหรับ Export"
+        );
+
+        return;
+
+    }
+
+
+    /*
+        เตรียมข้อมูล
+    */
+
+    let excelData = [];
+
+
+    /*
+        Header
+    */
+
+    let header = [
+        "ครั้งที่"
+    ];
+
+
+    for (
+        let i = 1;
+        i <= drawCount;
+        i++
+    ) {
+
+        header.push(
+            `ผลที่ ${i}`
+        );
+
+    }
+
+
+    header.push(
+        "จำนวนใบ"
+    );
+
+
+    excelData.push(header);
+
+
+    /*
+        Data
+    */
+
+    historyData.forEach(
+        item => {
+
+            let row = [
+                item.draw
+            ];
+
+
+            item.results.forEach(
+                number => {
+
+                    row.push(number);
+
+                }
+            );
+
+
+            row.push(
+                item.results.length
+            );
+
+
+            excelData.push(row);
+
+        }
+    );
+
+
+    /*
+        สร้าง Excel
+    */
+
+    const worksheet =
+        XLSX.utils.aoa_to_sheet(
+            excelData
+        );
+
+
+    const workbook =
+        XLSX.utils.book_new();
+
+
+    XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "ผลการสุ่ม"
+    );
+
+
+    /*
+        Download
+    */
+
+    XLSX.writeFile(
+        workbook,
+        `ผลการสุ่ม_${getFileDate()}.xlsx`
+    );
+
+}
+
+
+
+/*
+==================================================
+Copy สำหรับ Excel
+==================================================
+
+สร้างข้อมูลแบบ TAB
+
+เมื่อ Paste ลง Excel
+จะถูกแยก Column อัตโนมัติ
+==================================================
+*/
+
+function copyToExcel() {
+
+    if (historyData.length === 0) {
+
+        alert(
+            "ยังไม่มีประวัติสำหรับ Copy"
+        );
+
+        return;
+
+    }
+
+
+    let text = "";
+
+
+    /*
+        Header
+    */
+
+    text += "ครั้งที่\t";
+
+
+    for (
+        let i = 1;
+        i <= drawCount;
+        i++
+    ) {
+
+        text += `ผลที่ ${i}\t`;
+
+    }
+
+
+    text += "จำนวนใบ\n";
+
+
+    /*
+        Data
+    */
+
+    historyData.forEach(
+        item => {
+
+            text +=
+                item.draw + "\t";
+
+
+            item.results.forEach(
+                number => {
+
+                    text +=
+                        number + "\t";
+
+                }
+            );
+
+
+            text +=
+                item.results.length;
+
+
+            text += "\n";
+
+        }
+    );
+
+
+    /*
+        Copy เข้า Clipboard
+    */
+
+    navigator.clipboard.writeText(
+        text
+    )
+    .then(
+        () => {
+
+            document.getElementById("message")
+                .innerText =
+                "✅ Copy ข้อมูลเรียบร้อยแล้ว สามารถ Paste ลง Excel ได้เลย";
+
+        }
+    )
+    .catch(
+        () => {
+
+            /*
+                กรณี Browser ไม่อนุญาต
+            */
+
+            const textarea =
+                document.createElement("textarea");
+
+            textarea.value = text;
+
+            document.body.appendChild(
+                textarea
+            );
+
+            textarea.select();
+
+            document.execCommand(
+                "copy"
+            );
+
+            document.body.removeChild(
+                textarea
+            );
+
+
+            document.getElementById("message")
+                .innerText =
+                "✅ Copy ข้อมูลเรียบร้อยแล้ว";
+
+        }
+    );
 
 }
 
@@ -943,16 +1415,11 @@ Reset
 
 function resetGame() {
 
-    /*
-        หยุดการสุ่ม
-    */
-
     isRunning = false;
-
 
     currentDraw = 0;
 
-    drawHistory = [];
+    historyData = [];
 
 
     /*
@@ -963,12 +1430,8 @@ function resetGame() {
         .disabled = false;
 
 
-    document.getElementById("downloadButton")
-        .disabled = true;
-
-
     /*
-        Reset counter
+        Counter
     */
 
     document.getElementById("currentDraw")
@@ -976,35 +1439,27 @@ function resetGame() {
 
 
     /*
-        ล้างผลล่าสุด
+        ผลล่าสุด
     */
 
     document.getElementById("results")
         .innerHTML =
 
         `<div class="empty">
-
             กดปุ่ม "เริ่มสุ่ม"
-
         </div>`;
 
 
     /*
-        ล้างประวัติ
+        ตาราง
     */
 
-    document.getElementById("history")
-        .innerHTML =
-
-        `<div class="empty">
-
-            ยังไม่มีประวัติ
-
-        </div>`;
+    document.getElementById("historyBody")
+        .innerHTML = "";
 
 
     /*
-        ล้างข้อความ
+        Message
     */
 
     document.getElementById("message")
@@ -1012,6 +1467,60 @@ function resetGame() {
 
 }
 
+
+
+/*
+==================================================
+วันที่สำหรับชื่อไฟล์
+==================================================
+*/
+
+function getFileDate() {
+
+    const now =
+        new Date();
+
+
+    const year =
+        now.getFullYear();
+
+
+    const month =
+        String(
+            now.getMonth() + 1
+        ).padStart(2, "0");
+
+
+    const day =
+        String(
+            now.getDate()
+        ).padStart(2, "0");
+
+
+    const hour =
+        String(
+            now.getHours()
+        ).padStart(2, "0");
+
+
+    const minute =
+        String(
+            now.getMinutes()
+        ).padStart(2, "0");
+
+
+    const second =
+        String(
+            now.getSeconds()
+        ).padStart(2, "0");
+
+
+    return (
+        `${year}${month}${day}_` +
+        `${hour}${minute}${second}`
+    );
+
+}
 
 </script>
 
