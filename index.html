@@ -4,9 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>โปรแกรมสุ่มจับฉลาก</title>
 
     <style>
+
         * {
             box-sizing: border-box;
         }
@@ -19,22 +21,21 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 950px;
             margin: 40px auto;
             padding: 20px;
         }
 
         .card {
             background: white;
-            border-radius: 18px;
-            padding: 30px;
+            border-radius: 20px;
+            padding: 35px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.08);
         }
 
         h1 {
             text-align: center;
-            margin-top: 0;
-            margin-bottom: 10px;
+            margin: 0 0 10px;
         }
 
         .subtitle {
@@ -46,43 +47,55 @@
         .label-info {
             display: flex;
             justify-content: center;
-            gap: 12px;
+            gap: 10px;
             flex-wrap: wrap;
             margin-bottom: 30px;
         }
 
         .label-item {
-            padding: 12px 18px;
+            padding: 10px 16px;
             border-radius: 10px;
             background: #eef1f5;
             font-weight: bold;
         }
 
-        .control {
+        .settings {
             display: flex;
             justify-content: center;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 25px;
+            gap: 25px;
             flex-wrap: wrap;
+            margin-bottom: 25px;
         }
 
-        .control label {
+        .setting {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setting label {
             font-weight: bold;
         }
 
         input {
             width: 100px;
-            padding: 12px;
+            padding: 11px;
             font-size: 18px;
             text-align: center;
             border: 2px solid #ddd;
             border-radius: 10px;
         }
 
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
         button {
             border: none;
-            padding: 13px 24px;
+            padding: 13px 25px;
             border-radius: 10px;
             font-size: 16px;
             font-weight: bold;
@@ -99,15 +112,15 @@
             color: white;
         }
 
-        .reset-btn {
-            background: #e5e7eb;
-            color: #222;
-        }
-
         .draw-btn:disabled {
             background: #9ca3af;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .reset-btn {
+            background: #e5e7eb;
+            color: #222;
         }
 
         .status {
@@ -116,58 +129,63 @@
             font-size: 17px;
         }
 
-        .remaining {
+        .status span {
             font-weight: bold;
         }
 
         .result-box {
-            min-height: 180px;
+            min-height: 220px;
             background: #f8fafc;
             border: 2px dashed #cbd5e1;
             border-radius: 15px;
-            padding: 25px;
+            padding: 30px;
             text-align: center;
             margin-bottom: 30px;
         }
 
         .result-title {
             color: #666;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            font-size: 18px;
         }
 
         .results {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 18px;
             flex-wrap: wrap;
         }
 
         .result-number {
-            width: 80px;
-            height: 80px;
+            width: 90px;
+            height: 90px;
             border-radius: 50%;
             background: white;
-            border: 4px solid #2563eb;
+            border: 5px solid #2563eb;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 34px;
+            font-size: 38px;
             font-weight: bold;
             animation: pop 0.4s ease;
         }
 
         @keyframes pop {
+
             0% {
                 transform: scale(0);
                 opacity: 0;
             }
+
             70% {
                 transform: scale(1.15);
             }
+
             100% {
                 transform: scale(1);
                 opacity: 1;
             }
+
         }
 
         .history-title {
@@ -178,12 +196,12 @@
             background: #f8fafc;
             border-radius: 12px;
             padding: 15px;
-            max-height: 300px;
+            max-height: 350px;
             overflow-y: auto;
         }
 
         .history-item {
-            padding: 10px;
+            padding: 12px;
             border-bottom: 1px solid #e5e7eb;
         }
 
@@ -196,17 +214,14 @@
             text-align: center;
         }
 
-        .round {
-            font-weight: bold;
-        }
-
         .message {
             text-align: center;
-            margin-top: 15px;
+            margin-top: 20px;
             font-weight: bold;
         }
 
         @media (max-width: 600px) {
+
             .container {
                 margin: 10px auto;
                 padding: 10px;
@@ -217,13 +232,16 @@
             }
 
             .result-number {
-                width: 65px;
-                height: 65px;
-                font-size: 28px;
+                width: 70px;
+                height: 70px;
+                font-size: 30px;
             }
+
         }
+
     </style>
 </head>
+
 
 <body>
 
@@ -234,45 +252,88 @@
         <h1>🎟️ โปรแกรมสุ่มจับฉลาก</h1>
 
         <div class="subtitle">
-            สุ่มโดยไม่ใช้ใบเดิมซ้ำภายในรอบ
+            ทุกครั้งที่สุ่ม ระบบจะ Reset ฉลากใหม่อัตโนมัติ
         </div>
+
 
         <!-- จำนวนฉลาก -->
+
         <div class="label-info">
-            <div class="label-item">เลข 1 × 5</div>
-            <div class="label-item">เลข 2 × 3</div>
-            <div class="label-item">เลข 3 × 1</div>
-            <div class="label-item">เลข 4 × 3</div>
-            <div class="label-item">เลข 5 × 5</div>
+
+            <div class="label-item">
+                เลข 1 × 5
+            </div>
+
+            <div class="label-item">
+                เลข 2 × 3
+            </div>
+
+            <div class="label-item">
+                เลข 3 × 1
+            </div>
+
+            <div class="label-item">
+                เลข 4 × 3
+            </div>
+
+            <div class="label-item">
+                เลข 5 × 5
+            </div>
+
         </div>
 
-        <!-- ตั้งค่าจำนวนใบ -->
-        <div class="control">
 
-            <label for="drawCount">
-                จำนวนใบที่จะหยิบ:
-            </label>
+        <!-- Settings -->
 
-            <input
-                type="number"
-                id="drawCount"
-                min="1"
-                max="17"
-                value="1"
-            >
+        <div class="settings">
+
+            <div class="setting">
+
+                <label>
+                    จำนวนครั้งที่สุ่ม:
+                </label>
+
+                <input
+                    type="number"
+                    id="totalDraws"
+                    min="1"
+                    value="5"
+                >
+
+            </div>
+
+
+            <div class="setting">
+
+                <label>
+                    จำนวนใบต่อครั้ง:
+                </label>
+
+                <input
+                    type="number"
+                    id="drawCount"
+                    min="1"
+                    max="17"
+                    value="3"
+                >
+
+            </div>
 
         </div>
 
-        <!-- ปุ่ม -->
-        <div class="control">
+
+        <!-- Buttons -->
+
+        <div class="buttons">
 
             <button
                 class="draw-btn"
                 id="drawButton"
-                onclick="drawLabels()"
+                onclick="startDrawing()"
             >
-                🎲 สุ่มจับฉลาก
+                🎲 เริ่มสุ่ม
             </button>
+
 
             <button
                 class="reset-btn"
@@ -283,56 +344,76 @@
 
         </div>
 
-        <!-- สถานะ -->
+
+        <!-- Status -->
+
         <div class="status">
 
-            รอบที่:
-            <span id="round">1</span>
-
-            &nbsp; | &nbsp;
-
-            เหลือ:
-            <span
-                class="remaining"
-                id="remaining"
-            >
-                17
+            สุ่มไปแล้ว:
+            <span id="currentDraw">
+                0
             </span>
-            ใบ
+
+            /
+
+            <span id="totalDrawDisplay">
+                5
+            </span>
+
+            ครั้ง
 
         </div>
 
-        <!-- ผลการสุ่ม -->
+
+        <!-- Result -->
+
         <div class="result-box">
 
             <div class="result-title">
-                ผลการจับฉลาก
+
+                ผลการสุ่มครั้งล่าสุด
+
             </div>
+
 
             <div
                 class="results"
                 id="results"
             >
+
                 <div class="empty">
-                    กดปุ่ม "สุ่มจับฉลาก"
+
+                    กดปุ่ม "เริ่มสุ่ม"
+
                 </div>
+
             </div>
 
         </div>
 
-        <!-- ประวัติ -->
+
+        <!-- History -->
+
         <h3 class="history-title">
-            📋 ประวัติการจับฉลาก
+
+            📋 ประวัติการสุ่ม
+
         </h3>
+
 
         <div
             class="history"
             id="history"
         >
+
             <div class="empty">
+
                 ยังไม่มีประวัติ
+
             </div>
+
         </div>
+
 
         <div
             class="message"
@@ -344,268 +425,478 @@
 </div>
 
 
+
 <script>
 
+
+/*
+==================================================
+จำนวนฉลากต้นฉบับ
+==================================================
+
+1 = 5 ใบ
+2 = 3 ใบ
+3 = 1 ใบ
+4 = 3 ใบ
+5 = 5 ใบ
+
+รวม 17 ใบ
+==================================================
+*/
+
+const originalLabels = [
+
+    1, 1, 1, 1, 1,
+
+    2, 2, 2,
+
+    3,
+
+    4, 4, 4,
+
+    5, 5, 5, 5, 5
+
+];
+
+
+
+/*
+==================================================
+ตัวแปรระบบ
+==================================================
+*/
+
+let currentDraw = 0;
+
+let totalDraws = 0;
+
+let drawCount = 0;
+
+let isRunning = false;
+
+
+
+/*
+==================================================
+เริ่มการสุ่ม
+==================================================
+*/
+
+function startDrawing() {
+
+    if (isRunning) {
+        return;
+    }
+
+
+    totalDraws =
+        parseInt(
+            document.getElementById("totalDraws").value
+        );
+
+
+    drawCount =
+        parseInt(
+            document.getElementById("drawCount").value
+        );
+
+
     /*
-        จำนวนฉลากจริง
-
-        เลข 1 = 5 ใบ
-        เลข 2 = 3 ใบ
-        เลข 3 = 1 ใบ
-        เลข 4 = 3 ใบ
-        เลข 5 = 5 ใบ
-
-        รวม = 17 ใบ
+        ตรวจสอบจำนวนครั้ง
     */
 
-    const originalLabels = [
-        1, 1, 1, 1, 1,
-        2, 2, 2,
-        3,
-        4, 4, 4,
-        5, 5, 5, 5, 5
-    ];
+    if (
+        isNaN(totalDraws) ||
+        totalDraws < 1
+    ) {
 
-    // สำเนาของฉลากที่ยังเหลือ
-    let remainingLabels = [...originalLabels];
+        alert(
+            "กรุณาระบุจำนวนครั้งที่ต้องการสุ่ม"
+        );
 
-    // รอบปัจจุบัน
-    let round = 1;
-
-    // ลำดับครั้งที่จับ
-    let drawNumber = 0;
-
-
-    /*
-        ฟังก์ชันสุ่มจับฉลาก
-    */
-    function drawLabels() {
-
-        const input = document.getElementById("drawCount");
-
-        const count = parseInt(input.value);
-
-        const message = document.getElementById("message");
-
-        // ตรวจสอบจำนวน
-        if (isNaN(count) || count < 1) {
-
-            message.innerText =
-                "กรุณาระบุจำนวนใบอย่างน้อย 1 ใบ";
-
-            return;
-        }
-
-        // ถ้าขอมากกว่าจำนวนที่เหลือ
-        if (count > remainingLabels.length) {
-
-            message.innerText =
-                `เหลือฉลากเพียง ${remainingLabels.length} ใบ`;
-
-            return;
-        }
-
-        /*
-            สุ่มใบฉลาก
-
-            เราจะสุ่ม index ของ array
-            แล้ว splice ออกจาก array
-
-            ดังนั้นใบที่ถูกหยิบแล้ว
-            จะไม่สามารถถูกหยิบซ้ำได้
-        */
-
-        const selected = [];
-
-        for (let i = 0; i < count; i++) {
-
-            const randomIndex =
-                Math.floor(
-                    Math.random() * remainingLabels.length
-                );
-
-            const picked =
-                remainingLabels.splice(
-                    randomIndex,
-                    1
-                )[0];
-
-            selected.push(picked);
-        }
-
-
-        drawNumber++;
-
-
-        // แสดงผล
-        showResults(selected);
-
-
-        // เพิ่มประวัติ
-        addHistory(selected);
-
-
-        // อัปเดตจำนวนที่เหลือ
-        updateStatus();
-
-
-        message.innerText = "";
-
-
-        /*
-            ถ้าฉลากหมดทั้งหมด
-            ให้ Reset รอบใหม่อัตโนมัติ
-
-            ใช้ setTimeout เพื่อให้ผู้ใช้
-            เห็นผลการจับครั้งสุดท้ายก่อน
-        */
-
-        if (remainingLabels.length === 0) {
-
-            setTimeout(() => {
-
-                alert(
-                    `🎉 จบรอบที่ ${round} แล้ว!\n` +
-                    `ฉลากครบทั้ง 17 ใบ\n\n` +
-                    `ระบบกำลังเริ่มรอบใหม่`
-                );
-
-                round++;
-
-                remainingLabels = [...originalLabels];
-
-                drawNumber = 0;
-
-                updateStatus();
-
-                message.innerText =
-                    `เริ่มรอบใหม่ รอบที่ ${round}`;
-
-            }, 500);
-        }
+        return;
 
     }
 
 
     /*
-        แสดงผลเลขที่สุ่มได้
+        ตรวจสอบจำนวนใบ
     */
-    function showResults(selected) {
 
-        const results =
-            document.getElementById("results");
+    if (
+        isNaN(drawCount) ||
+        drawCount < 1 ||
+        drawCount > 17
+    ) {
 
-        results.innerHTML = "";
+        alert(
+            "จำนวนใบต่อครั้งต้องอยู่ระหว่าง 1 - 17 ใบ"
+        );
 
-        selected.forEach(number => {
+        return;
+
+    }
+
+
+    /*
+        Reset ตัวนับ
+    */
+
+    currentDraw = 0;
+
+    isRunning = true;
+
+
+    /*
+        Disable ปุ่ม
+    */
+
+    document.getElementById("drawButton")
+        .disabled = true;
+
+
+    /*
+        แสดงจำนวนครั้ง
+    */
+
+    document.getElementById("totalDrawDisplay")
+        .innerText = totalDraws;
+
+
+    /*
+        เริ่มสุ่ม
+    */
+
+    drawNext();
+
+}
+
+
+
+/*
+==================================================
+สุ่มครั้งถัดไป
+==================================================
+*/
+
+function drawNext() {
+
+    /*
+        ถ้าสุ่มครบแล้ว
+    */
+
+    if (currentDraw >= totalDraws) {
+
+        finishDrawing();
+
+        return;
+
+    }
+
+
+    /*
+        เพิ่มจำนวนครั้ง
+    */
+
+    currentDraw++;
+
+
+    document.getElementById("currentDraw")
+        .innerText = currentDraw;
+
+
+    /*
+        สำคัญมาก
+
+        ทุกครั้งที่เริ่มสุ่ม
+        จะสร้างฉลากใหม่จาก originalLabels
+
+        ดังนั้นแต่ละรอบจะเป็นอิสระจากกัน
+    */
+
+    let availableLabels =
+        [...originalLabels];
+
+
+    /*
+        Array สำหรับเก็บผลครั้งนี้
+    */
+
+    let selected = [];
+
+
+    /*
+        สุ่มตามจำนวนใบที่กำหนด
+    */
+
+    for (
+        let i = 0;
+        i < drawCount;
+        i++
+    ) {
+
+
+        /*
+            สุ่มตำแหน่ง
+            จากใบที่ยังไม่ได้หยิบ
+        */
+
+        const randomIndex =
+            Math.floor(
+                Math.random() *
+                availableLabels.length
+            );
+
+
+        /*
+            หยิบใบออกจาก array
+
+            splice ทำให้ใบนี้
+            ไม่สามารถถูกหยิบซ้ำ
+            ในรอบเดียวกันได้
+        */
+
+        const picked =
+            availableLabels.splice(
+                randomIndex,
+                1
+            )[0];
+
+
+        selected.push(picked);
+
+    }
+
+
+    /*
+        แสดงผล
+    */
+
+    showResults(selected);
+
+
+    /*
+        บันทึกประวัติ
+    */
+
+    addHistory(
+        currentDraw,
+        selected
+    );
+
+
+    /*
+        ถ้ายังไม่ครบจำนวนครั้ง
+        ให้รอ 1 วินาทีแล้วสุ่มใหม่
+    */
+
+    if (currentDraw < totalDraws) {
+
+        setTimeout(
+            drawNext,
+            1000
+        );
+
+    } else {
+
+        finishDrawing();
+
+    }
+
+}
+
+
+
+/*
+==================================================
+แสดงผลการสุ่ม
+==================================================
+*/
+
+function showResults(selected) {
+
+    const results =
+        document.getElementById("results");
+
+
+    results.innerHTML = "";
+
+
+    selected.forEach(
+        number => {
 
             const div =
                 document.createElement("div");
 
-            div.className = "result-number";
 
-            div.innerText = number;
+            div.className =
+                "result-number";
+
+
+            div.innerText =
+                number;
+
 
             results.appendChild(div);
 
-        });
-
-    }
-
-
-    /*
-        เพิ่มข้อมูลลงประวัติ
-    */
-    function addHistory(selected) {
-
-        const history =
-            document.getElementById("history");
-
-        // ถ้าเป็นครั้งแรก ให้ลบข้อความ "ยังไม่มีประวัติ"
-        if (
-            history.querySelector(".empty")
-        ) {
-            history.innerHTML = "";
         }
+    );
+
+}
 
 
-        const item =
-            document.createElement("div");
 
-        item.className = "history-item";
+/*
+==================================================
+เพิ่มประวัติ
+==================================================
+*/
 
+function addHistory(
+    drawNumber,
+    selected
+) {
 
-        item.innerHTML =
-            `<span class="round">
-                รอบ ${round} - ครั้งที่ ${drawNumber}
-            </span>
-            : หยิบ ${selected.length} ใบ
-            → ${selected.join(", ")}`;
-
-
-        history.prepend(item);
-
-    }
-
-
-    /*
-        อัปเดตจำนวนฉลากที่เหลือ
-    */
-    function updateStatus() {
-
-        document.getElementById("round")
-            .innerText = round;
-
-        document.getElementById("remaining")
-            .innerText = remainingLabels.length;
-
-    }
+    const history =
+        document.getElementById("history");
 
 
     /*
-        Reset เกม
+        ลบข้อความ
+        "ยังไม่มีประวัติ"
     */
-    function resetGame() {
 
-        const confirmReset =
-            confirm(
-                "ต้องการ Reset ฉลากทั้งหมดใช่หรือไม่?"
-            );
+    if (
+        history.querySelector(".empty")
+    ) {
 
-        if (!confirmReset) {
-            return;
-        }
-
-
-        remainingLabels = [...originalLabels];
-
-        round = 1;
-
-        drawNumber = 0;
-
-
-        document.getElementById("results")
-            .innerHTML =
-            `<div class="empty">
-                กดปุ่ม "สุ่มจับฉลาก"
-            </div>`;
-
-
-        document.getElementById("history")
-            .innerHTML =
-            `<div class="empty">
-                ยังไม่มีประวัติ
-            </div>`;
-
-
-        document.getElementById("message")
-            .innerText =
-            "Reset เรียบร้อยแล้ว";
-
-
-        updateStatus();
+        history.innerHTML = "";
 
     }
+
+
+    const item =
+        document.createElement("div");
+
+
+    item.className =
+        "history-item";
+
+
+    item.innerHTML =
+
+        `<strong>
+            ครั้งที่ ${drawNumber}
+        </strong>
+
+        → หยิบ ${selected.length} ใบ
+
+        → <strong>
+            ${selected.join(", ")}
+        </strong>`;
+
+
+    history.prepend(item);
+
+}
+
+
+
+/*
+==================================================
+สุ่มครบตามจำนวน
+==================================================
+*/
+
+function finishDrawing() {
+
+    isRunning = false;
+
+
+    document.getElementById("drawButton")
+        .disabled = false;
+
+
+    document.getElementById("message")
+        .innerText =
+
+        `🎉 สุ่มครบ ${totalDraws} ครั้งแล้ว`;
+
+}
+
+
+
+/*
+==================================================
+Reset
+==================================================
+*/
+
+function resetGame() {
+
+    /*
+        หยุดการสุ่ม
+    */
+
+    isRunning = false;
+
+
+    currentDraw = 0;
+
+
+    /*
+        เปิดปุ่ม
+    */
+
+    document.getElementById("drawButton")
+        .disabled = false;
+
+
+    /*
+        Reset counter
+    */
+
+    document.getElementById("currentDraw")
+        .innerText = "0";
+
+
+    /*
+        ล้างผลล่าสุด
+    */
+
+    document.getElementById("results")
+        .innerHTML =
+
+        `<div class="empty">
+
+            กดปุ่ม "เริ่มสุ่ม"
+
+        </div>`;
+
+
+    /*
+        ล้างประวัติ
+    */
+
+    document.getElementById("history")
+        .innerHTML =
+
+        `<div class="empty">
+
+            ยังไม่มีประวัติ
+
+        </div>`;
+
+
+    /*
+        ล้างข้อความ
+    */
+
+    document.getElementById("message")
+        .innerText = "";
+
+}
+
 
 </script>
 
