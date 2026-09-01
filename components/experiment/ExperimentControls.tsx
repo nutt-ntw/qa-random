@@ -28,8 +28,8 @@ export function ExperimentControls({ inputs, errors, populationSize, populationM
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">แต่ละรอบจะหยิบแบบไม่คืนฉลาก จากนั้นสร้างประชากรใหม่ก่อนเริ่มรอบถัดไป</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="metric-pill"><span>Population</span><strong>{populationSize.toLocaleString()}</strong></div>
-            <div className="metric-pill"><span>Population μ</span><strong>{populationSize ? populationMean.toFixed(2).replace(/\.00$/, "") : "—"}</strong></div>
+            <div className="metric-pill"><span>POPULATION</span><strong>{populationSize.toLocaleString()}</strong></div>
+            <div className="metric-pill"><span>POPULATION μ</span><strong>{populationSize ? populationMean.toFixed(2).replace(/\.00$/, "") : "—"}</strong></div>
           </div>
         </div>
 

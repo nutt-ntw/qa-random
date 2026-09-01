@@ -19,29 +19,39 @@ export function TicketPool({ counts, errors, disabled, onChange }: TicketPoolPro
   return (
     <fieldset disabled={disabled} className="min-w-0">
       <legend className="mb-4 text-sm font-semibold text-slate-200">จำนวนฉลากในประชากร</legend>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {TICKET_VALUES.map((value) => {
           const errorId = `ticket-${value}-error`;
           return (
-            <label key={value} className={`group relative rounded-2xl bg-gradient-to-br p-3 ring-1 transition focus-within:ring-2 ${ticketColors[value]}`}>
-              <span className="mb-3 flex items-center justify-between">
-                <span className="grid size-9 place-items-center rounded-xl border border-white/15 bg-slate-950/55 text-lg font-bold">{value}</span>
-                <span className="text-xs font-bold tracking-[0.08em] text-slate-300">กระดาษเลข {value}</span>
+            <label
+              key={value}
+              className={`paper-sheet group relative bg-gradient-to-br p-3.5 ring-1 transition focus-within:ring-2 ${ticketColors[value]}`}
+            >
+              <span className="paper-fold" aria-hidden="true" />
+              <span className="relative z-10 flex min-h-12 items-center gap-3 pr-3">
+                <span className="paper-number grid size-10 shrink-0 place-items-center text-xl font-black">{value}</span>
+                <span className="min-w-0">
+                  <span className="block text-[0.6rem] font-bold tracking-[0.18em] text-slate-400">ฉลาก</span>
+                  <span className="block text-xs leading-4 font-bold text-slate-100 sm:text-sm">กระดาษเลข {value}</span>
+                </span>
               </span>
               <span className="sr-only">จำนวนฉลากเลข {value}</span>
-              <input
-                type="number"
-                inputMode="numeric"
-                min="0"
-                max="10000"
-                step="1"
-                value={counts[value]}
-                onChange={(event) => onChange(value, event.target.value)}
-                aria-invalid={Boolean(errors[value])}
-                aria-describedby={errors[value] ? errorId : undefined}
-                className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-950/65 px-3 text-center text-lg font-bold text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/60 focus:ring-2 focus:ring-cyan-300/20 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              {errors[value] ? <span id={errorId} className="mt-2 block text-xs leading-5 text-rose-300">{errors[value]}</span> : null}
+              <span className="paper-quantity relative z-10 mt-3 block pt-3">
+                <span className="mb-1.5 block text-center text-[0.62rem] font-semibold tracking-[0.12em] text-slate-400">จำนวนแผ่น</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  max="10000"
+                  step="1"
+                  value={counts[value]}
+                  onChange={(event) => onChange(value, event.target.value)}
+                  aria-invalid={Boolean(errors[value])}
+                  aria-describedby={errors[value] ? errorId : undefined}
+                  className="min-h-11 w-full rounded-xl border border-white/10 bg-slate-950/65 px-3 text-center text-lg font-bold text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/60 focus:ring-2 focus:ring-cyan-300/20 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </span>
+              {errors[value] ? <span id={errorId} className="relative z-10 mt-2 block text-xs leading-5 text-rose-300">{errors[value]}</span> : null}
             </label>
           );
         })}
