@@ -1,99 +1,100 @@
-# โปรแกรมสุ่มจับฉลาก (QA Random)
+# QA Random — Lottery Draw Simulator
 
-เว็บแอปสำหรับจำลองการสุ่มฉลากและศึกษาการกระจายตัวของค่าเฉลี่ย (Sampling Distribution) เพื่อใช้ประกอบการเรียนเรื่อง Central Limit Theorem
+A responsive web application for simulating lottery draws and exploring the sampling distribution of the mean. It is designed as a classroom aid for learning about sampling and the Central Limit Theorem.
 
-🔗 [ทดลองใช้งานผ่าน GitHub Pages](https://nutt-ntw.github.io/qa-random/)
+🔗 [Open the live application on GitHub Pages](https://nutt-ntw.github.io/qa-random/)
 
-## ฟีเจอร์
+## Features
 
-- กำหนดจำนวนฉลากของเลข 1–5 ได้
-- กำหนดจำนวนรอบและจำนวนใบที่หยิบต่อรอบได้
-- สุ่มแบบไม่คืนฉลากภายในรอบ และสร้างกองฉลากใหม่ทุกครั้ง
-- คำนวณค่าเฉลี่ยของผลลัพธ์แต่ละรอบ
-- แสดง Sampling Distribution ด้วยจุดข้อมูลและเส้น Density
-- ดูหมายเลขรอบและค่าเฉลี่ยด้วยการเลื่อนเมาส์เหนือจุด
-- รองรับหน้าจอคอมพิวเตอร์และโทรศัพท์มือถือ
-- คัดลอกผลลัพธ์สำหรับ Excel
-- Export เป็นไฟล์ CSV และ Excel
-- แสดง countdown ก่อนสอบและสุ่มคำคมเมื่อทำงานครบทุกครั้ง
+- Configure the number of tickets labeled 1 through 5
+- Set the number of rounds and tickets drawn per round
+- Draw without replacement within each round
+- Automatically rebuild the ticket pool for every new round
+- Calculate the mean for each round
+- Visualize sample means as a dot plot with an estimated density curve
+- Hover over a point to view its round number and mean
+- Responsive layout for desktop and mobile devices
+- Copy results in an Excel-friendly format
+- Export results as CSV or Excel
+- Show an exam countdown and a random quote after all rounds finish
 
-## วิธีใช้งาน
+## How to use
 
-1. กำหนดจำนวนฉลากของเลขแต่ละตัว
-2. ระบุจำนวนครั้งที่ต้องการสุ่ม
-3. ระบุจำนวนใบที่ต้องการหยิบต่อครั้ง
-4. กด **🎲 เริ่มสุ่ม**
-5. ดูผลลัพธ์ ค่าเฉลี่ย ประวัติ และกราฟ Sampling Distribution
-6. กด **Reset** เมื่อต้องการล้างข้อมูลทั้งหมด
+1. Set the number of tickets for each value.
+2. Enter the number of draw rounds.
+3. Enter the number of tickets to draw per round.
+4. Select **🎲 Start Drawing**.
+5. Review the latest result, history table, means, and sampling distribution.
+6. Select **Reset** to clear all results and start over.
 
-ค่าเริ่มต้นของจำนวนฉลากคือ:
+The default ticket configuration is:
 
-| เลข | จำนวนฉลาก |
+| Value | Number of tickets |
 |---:|---:|
 | 1 | 5 |
 | 2 | 3 |
 | 3 | 1 |
 | 4 | 3 |
 | 5 | 5 |
-| **รวม** | **17** |
+| **Total** | **17** |
 
-ค่าเฉลี่ยของประชากรชุดเริ่มต้นเท่ากับ 3
+The population mean of the default configuration is 3.
 
-## Logic การสุ่ม
+## Randomization logic
 
-ในแต่ละรอบ ระบบจะสร้างกองฉลากจากค่าที่ผู้ใช้กำหนด จากนั้นเลือกตำแหน่งแบบสุ่มด้วย `Math.random()` และนำฉลากที่ถูกเลือกออกจากกองด้วย `splice()`
+At the beginning of each round, the application creates a ticket pool from the configured quantities. It chooses a random array position with `Math.random()` and removes the selected ticket from the pool with `splice()`.
 
-ดังนั้น:
+This means:
 
-- การหยิบหลายใบภายในรอบเดียวกันเป็นการสุ่มแบบ **ไม่คืนฉลาก**
-- เมื่อเริ่มรอบถัดไป ระบบจะสร้างกองฉลากใหม่
-- แต่ละรอบจึงเป็นอิสระจากรอบก่อนหน้า
-- ความน่าจะเป็นของแต่ละเลขขึ้นอยู่กับจำนวนฉลากของเลขนั้น
+- Multiple tickets within the same round are sampled **without replacement**.
+- The full ticket pool is rebuilt before the next round begins.
+- Draw rounds are independent of previous rounds.
+- The probability of drawing each value is proportional to the number of its tickets.
 
-> `Math.random()` เหมาะสำหรับการทดลองและการเรียนการสอน แต่ไม่ควรใช้กับการจับรางวัลที่ต้องการความปลอดภัยหรือการตรวจสอบอย่างเป็นทางการ
+> `Math.random()` is suitable for demonstrations and classroom experiments. It is not appropriate for secure, regulated, or auditable prize drawings.
 
-## การทดลอง Central Limit Theorem
+## Central Limit Theorem experiments
 
-เพื่อให้เห็นการกระจายของค่าเฉลี่ยชัดเจน แนะนำให้ทดลองดังนี้:
+To make the distribution of sample means easier to observe, try:
 
-- จำนวนครั้งที่สุ่ม: 50–100 รอบ
-- จำนวนใบต่อครั้ง: 2–5 ใบ
-- เปรียบเทียบรูปทรงและความกว้างของ distribution เมื่อเพิ่มจำนวนใบต่อครั้ง
+- Draw rounds: 50–100
+- Tickets per round: 2–5
+- Compare the shape and spread of the distribution as the sample size changes
 
-ไม่ควรตั้งจำนวนใบต่อครั้งเป็น 17 ใบเมื่อใช้ชุดฉลากเริ่มต้น เพราะจะเป็นการหยิบฉลากทั้งหมดทุกครั้ง ทำให้ค่าเฉลี่ยเท่ากับ 3 เสมอและไม่มีความแปรปรวน
+Avoid drawing all 17 tickets per round with the default configuration. Selecting the entire population always produces a mean of 3, so the sampling distribution has zero variance.
 
-กราฟประกอบด้วย:
+The chart contains:
 
-- **จุดสีส้ม:** ค่าเฉลี่ยจริงของแต่ละรอบ
-- **เส้นสีน้ำเงิน:** ความหนาแน่นโดยประมาณ (Density)
-- **เส้นประสีม่วง:** ค่าเฉลี่ยรวมของทุกครั้ง
-- **แกน X:** ค่าเฉลี่ยต่อรอบ ตั้งแต่ 1 ถึง 5
+- **Orange dots:** the actual mean from each round
+- **Blue curve:** an estimated density curve
+- **Purple dashed line:** the overall mean across all rounds
+- **X-axis:** round means on a fixed scale from 1 to 5
 
-## รูปแบบข้อมูลที่ Export
+## Export format
 
-ไฟล์ CSV และ Excel จะแยกผลการสุ่มแต่ละใบออกเป็นหนึ่งคอลัมน์ พร้อมข้อมูลต่อไปนี้:
+CSV and Excel exports place each selected ticket in its own column and include:
 
-- ครั้งที่สุ่ม
-- ผลที่ 1, ผลที่ 2, …
-- ค่าเฉลี่ย
-- จำนวนใบ
+- Round number
+- Result 1, Result 2, …
+- Mean
+- Number of tickets drawn
 
-## การรันบนเครื่อง
+## Run locally
 
-โปรเจกต์เป็นเว็บแบบ Static และไม่มีขั้นตอนติดตั้ง dependency
+This is a static web project with no package installation or build step.
 
-เปิด `index.html` โดยตรง หรือรัน local server:
+Open `index.html` directly, or start a local server:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-จากนั้นเปิด [http://localhost:8000](http://localhost:8000)
+Then visit [http://localhost:8000](http://localhost:8000).
 
-## เทคโนโลยี
+## Technology
 
-- HTML, CSS และ JavaScript
-- Canvas API สำหรับวาดกราฟ
-- [SheetJS](https://sheetjs.com/) สำหรับ Export Excel
-- Noto Sans Thai และ Noto Sans
-- GitHub Pages สำหรับเผยแพร่เว็บไซต์
+- HTML, CSS, and JavaScript
+- Canvas API for chart rendering
+- [SheetJS](https://sheetjs.com/) for Excel export
+- Noto Sans Thai and Noto Sans
+- GitHub Pages for hosting
