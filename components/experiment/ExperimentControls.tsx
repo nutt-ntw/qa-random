@@ -47,7 +47,6 @@ export function ExperimentControls({ inputs, errors, populationSize, populationM
           </Button>
           <Button tone="secondary" className="min-h-13 sm:min-w-36" icon={<ResetIcon className="size-5" />} onClick={onReset}>Reset</Button>
         </div>
-        <p className="mt-4 text-xs leading-5 text-slate-500">เพื่อการเรียนรู้เท่านั้น · การสุ่มใช้ Math.random() และไม่ใช่ระบบจับรางวัลที่มีความปลอดภัยเชิงเข้ารหัส</p>
       </div>
     </Panel>
   );
