@@ -26,7 +26,7 @@ export function ResultsHistory({ results, onCopy, onCsv, onExcel }: ResultsHisto
       </div>
 
       {results.length ? (
-        <div className="max-h-[34rem] overflow-auto" tabIndex={0} aria-label="ตารางประวัติการสุ่ม เลื่อนได้ทั้งแนวตั้งและแนวนอน">
+        <div className="h-[22rem] overflow-auto sm:h-[28rem] lg:h-[34rem]" tabIndex={0} aria-label="ตารางประวัติการสุ่ม เลื่อนได้ทั้งแนวตั้งและแนวนอน">
           <table className="w-full min-w-max border-collapse text-sm">
             <thead className="sticky top-0 z-10 bg-slate-900/95 text-xs uppercase tracking-[0.12em] text-slate-400 backdrop-blur-xl">
               <tr>
@@ -49,7 +49,7 @@ export function ResultsHistory({ results, onCopy, onCsv, onExcel }: ResultsHisto
           </table>
         </div>
       ) : (
-        <div className="grid min-h-44 place-items-center p-6 text-center"><div><TableIcon className="mx-auto size-8 text-slate-600" /><p className="mt-3 font-medium text-slate-300">ยังไม่มีประวัติการสุ่ม</p><p className="mt-1 text-sm text-slate-500">ข้อมูลแต่ละใบจะถูกแยกเป็นคนละคอลัมน์โดยอัตโนมัติ</p></div></div>
+        <div className="grid h-[22rem] place-items-center p-6 text-center sm:h-[28rem] lg:h-[34rem]"><div><TableIcon className="mx-auto size-8 text-slate-600" /><p className="mt-3 font-medium text-slate-300">ยังไม่มีประวัติการสุ่ม</p><p className="mt-1 text-sm text-slate-500">ข้อมูลแต่ละใบจะถูกแยกเป็นคนละคอลัมน์โดยอัตโนมัติ</p></div></div>
       )}
     </Panel>
   );

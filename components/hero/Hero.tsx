@@ -8,7 +8,7 @@ export function Hero() {
       </div>
       <div className="relative mx-auto max-w-7xl">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
-          <SparkIcon className="size-4" /> Interactive Statistics Lab
+          <SparkIcon className="size-4" /> I LOVE Quantitative Analysis LAB
         </div>
         <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
           <div>

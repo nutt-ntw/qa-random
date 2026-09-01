@@ -10,7 +10,7 @@ const notoSansThai = Noto_Sans_Thai({
 });
 
 export const metadata: Metadata = {
-  title: "QA Random — Interactive Statistics Lab",
+  title: "QA Random — I LOVE Quantitative Analysis LAB",
   description: "ทดลอง sampling distribution และ Central Limit Theorem ผ่านการสุ่มฉลากแบบไม่คืนค่า",
 };
 
