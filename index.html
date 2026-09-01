@@ -291,6 +291,51 @@
             border-bottom: none;
         }
 
+        /* Histogram */
+
+        .histogram-section {
+            margin-top: 30px;
+        }
+
+        .histogram-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .histogram-header h3 {
+            margin: 0;
+        }
+
+        .histogram-summary {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .histogram-wrapper {
+            position: relative;
+            min-height: 340px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+
+        #histogramCanvas {
+            display: none;
+            width: 100%;
+            height: 320px;
+        }
+
+        .histogram-note {
+            margin: 10px 0 0;
+            color: #64748b;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
         .empty {
             color: #999;
             text-align: center;
@@ -548,6 +593,51 @@
                 </table>
 
             </div>
+
+        </div>
+
+
+        <!-- Histogram ค่าเฉลี่ย -->
+
+        <div class="histogram-section">
+
+            <div class="histogram-header">
+
+                <h3>
+                    📊 Histogram ค่าเฉลี่ยต่อรอบ
+                </h3>
+
+                <div
+                    class="histogram-summary"
+                    id="histogramSummary"
+                >
+                    ยังไม่มีข้อมูล
+                </div>
+
+            </div>
+
+
+            <div class="histogram-wrapper">
+
+                <canvas
+                    id="histogramCanvas"
+                    role="img"
+                    aria-label="Histogram แสดงการกระจายของค่าเฉลี่ยผลการสุ่มแต่ละรอบ"
+                ></canvas>
+
+                <div
+                    class="empty"
+                    id="histogramEmpty"
+                >
+                    เริ่มสุ่มเพื่อดูการกระจายของค่าเฉลี่ย
+                </div>
+
+            </div>
+
+            <p class="histogram-note">
+                หมายเหตุ: หากหยิบครบทุกใบ ค่าเฉลี่ยจะเท่ากันทุกครั้ง
+                ควรกำหนดจำนวนใบต่อครั้งให้น้อยกว่าจำนวนฉลากรวมเพื่อสังเกตการกระจาย
+            </p>
 
         </div>
 
@@ -912,7 +1002,9 @@ function drawNext() {
 
         draw: currentDraw,
 
-        results: selected
+        results: selected,
+
+        mean: calculateMean(selected)
 
     });
 
@@ -930,8 +1022,12 @@ function drawNext() {
 
     addHistoryRow(
         currentDraw,
-        selected
+        selected,
+        historyData[historyData.length - 1].mean
     );
+
+
+    renderHistogram();
 
 
     /*
@@ -1011,6 +1107,15 @@ function createTableHeader() {
     const thCount =
         document.createElement("th");
 
+
+    const thMean =
+        document.createElement("th");
+
+    thMean.innerText =
+        "ค่าเฉลี่ย";
+
+    header.appendChild(thMean);
+
     thCount.innerText =
         "จำนวนใบ";
 
@@ -1028,7 +1133,8 @@ function createTableHeader() {
 
 function addHistoryRow(
     drawNumber,
-    selected
+    selected,
+    mean
 ) {
 
     const tbody =
@@ -1072,6 +1178,19 @@ function addHistoryRow(
 
 
     /*
+        ค่าเฉลี่ยของรอบ
+    */
+
+    const meanCell =
+        document.createElement("td");
+
+    meanCell.innerText =
+        formatMean(mean);
+
+    row.appendChild(meanCell);
+
+
+    /*
         จำนวนใบ
     */
 
@@ -1085,6 +1204,289 @@ function addHistoryRow(
 
 
     tbody.appendChild(row);
+
+}
+
+
+
+/*
+==================================================
+คำนวณค่าเฉลี่ยและ Histogram
+==================================================
+*/
+
+function calculateMean(values) {
+
+    return values.reduce(
+        (sum, value) => sum + value,
+        0
+    ) / values.length;
+
+}
+
+
+function formatMean(value) {
+
+    return value
+        .toFixed(4)
+        .replace(/\.?0+$/, "");
+
+}
+
+
+function buildHistogram(values) {
+
+    if (values.length === 0) {
+        return [];
+    }
+
+
+    const minimum = Math.min(...values);
+
+    const maximum = Math.max(...values);
+
+
+    if (minimum === maximum) {
+
+        return [{
+            start: minimum,
+            end: maximum,
+            count: values.length
+        }];
+
+    }
+
+
+    /* Sturges' rule พร้อมจำกัดจำนวนแท่งให้อ่านง่าย */
+    const binCount = Math.min(
+        12,
+        Math.max(
+            2,
+            Math.ceil(Math.log2(values.length) + 1)
+        )
+    );
+
+
+    const binWidth =
+        (maximum - minimum) / binCount;
+
+
+    const bins = Array.from(
+        { length: binCount },
+        (_, index) => ({
+            start: minimum + index * binWidth,
+            end: minimum + (index + 1) * binWidth,
+            count: 0
+        })
+    );
+
+
+    values.forEach(
+        value => {
+
+            const index = Math.min(
+                Math.floor(
+                    (value - minimum) / binWidth
+                ),
+                binCount - 1
+            );
+
+            bins[index].count++;
+
+        }
+    );
+
+
+    return bins;
+
+}
+
+
+function renderHistogram() {
+
+    const canvas =
+        document.getElementById("histogramCanvas");
+
+    const empty =
+        document.getElementById("histogramEmpty");
+
+    const summary =
+        document.getElementById("histogramSummary");
+
+
+    if (historyData.length === 0) {
+
+        canvas.style.display = "none";
+
+        empty.style.display = "block";
+
+        summary.innerText = "ยังไม่มีข้อมูล";
+
+        return;
+
+    }
+
+
+    const means = historyData.map(
+        item => item.mean
+    );
+
+    const bins = buildHistogram(means);
+
+
+    empty.style.display = "none";
+
+    canvas.style.display = "block";
+
+
+    const width = Math.max(
+        canvas.clientWidth,
+        640
+    );
+
+    const height = 320;
+
+    const pixelRatio =
+        window.devicePixelRatio || 1;
+
+
+    canvas.width = width * pixelRatio;
+
+    canvas.height = height * pixelRatio;
+
+
+    const context =
+        canvas.getContext("2d");
+
+    context.setTransform(
+        pixelRatio,
+        0,
+        0,
+        pixelRatio,
+        0,
+        0
+    );
+
+    context.clearRect(0, 0, width, height);
+
+
+    const padding = {
+        top: 20,
+        right: 20,
+        bottom: 70,
+        left: 55
+    };
+
+    const chartWidth =
+        width - padding.left - padding.right;
+
+    const chartHeight =
+        height - padding.top - padding.bottom;
+
+    const maximumCount = Math.max(
+        ...bins.map(bin => bin.count)
+    );
+
+
+    context.strokeStyle = "#94a3b8";
+
+    context.lineWidth = 1;
+
+    context.beginPath();
+
+    context.moveTo(padding.left, padding.top);
+
+    context.lineTo(padding.left, padding.top + chartHeight);
+
+    context.lineTo(
+        padding.left + chartWidth,
+        padding.top + chartHeight
+    );
+
+    context.stroke();
+
+
+    const slotWidth =
+        chartWidth / bins.length;
+
+
+    bins.forEach(
+        (bin, index) => {
+
+            const barHeight =
+                bin.count / maximumCount * chartHeight;
+
+            const x =
+                padding.left + index * slotWidth + 3;
+
+            const y =
+                padding.top + chartHeight - barHeight;
+
+
+            context.fillStyle = "#2563eb";
+
+            context.fillRect(
+                x,
+                y,
+                Math.max(slotWidth - 6, 1),
+                barHeight
+            );
+
+
+            context.fillStyle = "#334155";
+
+            context.font = "12px Arial, sans-serif";
+
+            context.textAlign = "center";
+
+            context.fillText(
+                String(bin.count),
+                x + Math.max(slotWidth - 6, 1) / 2,
+                Math.max(y - 6, 12)
+            );
+
+
+            const label = bin.start === bin.end
+                ? formatMean(bin.start)
+                : `${formatMean(bin.start)}–${formatMean(bin.end)}`;
+
+
+            context.save();
+
+            context.translate(
+                x + Math.max(slotWidth - 6, 1) / 2,
+                padding.top + chartHeight + 12
+            );
+
+            context.rotate(-Math.PI / 4);
+
+            context.textAlign = "right";
+
+            context.fillText(label, 0, 0);
+
+            context.restore();
+
+        }
+    );
+
+
+    context.save();
+
+    context.translate(16, padding.top + chartHeight / 2);
+
+    context.rotate(-Math.PI / 2);
+
+    context.textAlign = "center";
+
+    context.fillText("ความถี่ (รอบ)", 0, 0);
+
+    context.restore();
+
+
+    const overallMean = calculateMean(means);
+
+    summary.innerText =
+        `${means.length} รอบ | ค่าเฉลี่ยรวม ${formatMean(overallMean)}`;
 
 }
 
@@ -1195,7 +1597,7 @@ function exportCSV() {
     }
 
 
-    csv += ",จำนวนใบ\n";
+    csv += ",ค่าเฉลี่ย,จำนวนใบ\n";
 
 
     /*
@@ -1217,7 +1619,8 @@ function exportCSV() {
             );
 
 
-            csv += `,${item.results.length}\n`;
+            csv +=
+                `,${formatMean(item.mean)},${item.results.length}\n`;
 
         }
     );
@@ -1319,6 +1722,7 @@ function exportExcel() {
 
 
     header.push(
+        "ค่าเฉลี่ย",
         "จำนวนใบ"
     );
 
@@ -1348,6 +1752,7 @@ function exportExcel() {
 
 
             row.push(
+                item.mean,
                 item.results.length
             );
 
@@ -1438,7 +1843,7 @@ function copyToExcel() {
     }
 
 
-    text += "จำนวนใบ\n";
+    text += "ค่าเฉลี่ย\tจำนวนใบ\n";
 
 
     /*
@@ -1463,6 +1868,7 @@ function copyToExcel() {
 
 
             text +=
+                formatMean(item.mean) + "\t" +
                 item.results.length;
 
 
@@ -1587,6 +1993,9 @@ function resetGame() {
     document.getElementById("message")
         .innerText = "";
 
+
+    renderHistogram();
+
 }
 
 
@@ -1646,6 +2055,23 @@ function getFileDate() {
 
 
 updateTotalLabels();
+
+drawCount = Number(
+    document.getElementById("drawCount").value
+);
+
+createTableHeader();
+
+renderHistogram();
+
+window.addEventListener(
+    "resize",
+    () => {
+        if (historyData.length > 0) {
+            renderHistogram();
+        }
+    }
+);
 
 </script>
 
