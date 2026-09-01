@@ -616,7 +616,7 @@
             <div class="histogram-header">
 
                 <h3>
-                    📊 Histogram ค่าเฉลี่ยต่อรอบ
+                    📈 Sampling Distribution ของค่าเฉลี่ย
                 </h3>
 
                 <div
@@ -634,7 +634,7 @@
                 <canvas
                     id="histogramCanvas"
                     role="img"
-                    aria-label="Histogram แสดงการกระจายของค่าเฉลี่ยผลการสุ่มแต่ละรอบ"
+                    aria-label="กราฟเส้นโค้งและจุด แสดง sampling distribution ของค่าเฉลี่ยแต่ละรอบ"
                 ></canvas>
 
                 <div
@@ -647,9 +647,8 @@
             </div>
 
             <p class="histogram-note">
-                ค่าเฉลี่ยทศนิยมจะถูกจัดเข้ากลุ่มเลขที่ใกล้ที่สุด 1–5
-                และเส้นสีส้มเชื่อมยอดแท่งเพื่อช่วยมองรูปทรงการกระจาย
-                หากหยิบครบทุกใบ ค่าเฉลี่ยจะเท่ากันทุกครั้ง
+                จุดสีส้มแต่ละจุดคือค่าเฉลี่ยจริงของหนึ่งรอบ
+                ส่วนเส้นโค้งแสดงความหนาแน่นโดยประมาณของ sampling distribution
             </p>
 
         </div>
@@ -1247,95 +1246,72 @@ function formatMean(value) {
 }
 
 
-function buildHistogram(values) {
+function buildDensity(values) {
 
     if (values.length === 0) {
         return [];
     }
 
 
-    const bins = Array.from(
-        { length: 5 },
-        (_, index) => ({
-            value: index + 1,
-            count: 0
-        })
+    const sampleCount = 180;
+
+    const minimum = 1;
+
+    const maximum = 5;
+
+
+    const mean = calculateMean(values);
+
+    const variance = values.reduce(
+        (sum, value) =>
+            sum + Math.pow(value - mean, 2),
+        0
+    ) / values.length;
+
+    const standardDeviation =
+        Math.sqrt(variance);
+
+
+    /* Silverman's rule พร้อมขอบเขตสำหรับข้อมูลช่วง 1 - 5 */
+    const bandwidth = Math.min(
+        0.55,
+        Math.max(
+            0.1,
+            1.06 * standardDeviation *
+                Math.pow(values.length, -0.2)
+        )
     );
 
 
-    values.forEach(
-        value => {
+    return Array.from(
+        { length: sampleCount },
+        (_, index) => {
 
-            const index = Math.max(
-                0,
-                Math.min(
-                    4,
-                    Math.round(value) - 1
-                )
+            const x = minimum +
+                index / (sampleCount - 1) *
+                (maximum - minimum);
+
+
+            const density = values.reduce(
+                (sum, value) => {
+
+                    const distance =
+                        (x - value) / bandwidth;
+
+                    return sum +
+                        Math.exp(-0.5 * distance * distance);
+
+                },
+                0
+            ) / (
+                values.length *
+                bandwidth *
+                Math.sqrt(2 * Math.PI)
             );
 
-            bins[index].count++;
-
+            return { x, density };
         }
     );
-
-
-    return bins;
-
-}
-
-
-function drawRoundedBar(
-    context,
-    x,
-    y,
-    width,
-    height,
-    radius
-) {
-
-    if (height <= 0) {
-        return;
-    }
-
-
-    const cornerRadius = Math.min(
-        radius,
-        width / 2,
-        height
-    );
-
-
-    context.beginPath();
-
-    context.moveTo(x, y + height);
-
-    context.lineTo(x, y + cornerRadius);
-
-    context.quadraticCurveTo(
-        x,
-        y,
-        x + cornerRadius,
-        y
-    );
-
-    context.lineTo(
-        x + width - cornerRadius,
-        y
-    );
-
-    context.quadraticCurveTo(
-        x + width,
-        y,
-        x + width,
-        y + cornerRadius
-    );
-
-    context.lineTo(x + width, y + height);
-
-    context.closePath();
-
-    context.fill();
 
 }
 
@@ -1369,7 +1345,7 @@ function renderHistogram() {
         item => item.mean
     );
 
-    const bins = buildHistogram(means);
+    const densityPoints = buildDensity(means);
 
 
     empty.style.display = "none";
@@ -1421,17 +1397,26 @@ function renderHistogram() {
     const chartHeight =
         height - padding.top - padding.bottom;
 
-    const maximumCount = Math.max(
-        ...bins.map(bin => bin.count)
+    const overallMean = calculateMean(means);
+
+    const maximumDensity = Math.max(
+        ...densityPoints.map(point => point.density)
     );
 
+    const baseline =
+        padding.top + chartHeight;
 
-    const gridSteps = 5;
+    const curveHeight =
+        chartHeight - 25;
 
-    const yAxisMaximum = Math.max(
-        5,
-        Math.ceil(maximumCount / gridSteps) * gridSteps
-    );
+
+    const toX = value =>
+        padding.left +
+        (value - 1) / 4 * chartWidth;
+
+    const toY = density =>
+        baseline -
+        density / maximumDensity * curveHeight;
 
 
     context.font = "12px Arial, sans-serif";
@@ -1439,19 +1424,15 @@ function renderHistogram() {
     context.lineWidth = 1;
 
 
-    /* เส้น Grid และตัวเลขแกน Y */
+    /* เส้น Grid */
     for (
         let step = 0;
-        step <= gridSteps;
+        step <= 4;
         step++
     ) {
 
-        const value =
-            step / gridSteps * yAxisMaximum;
-
-        const y = padding.top + chartHeight -
-            step / gridSteps * chartHeight;
-
+        const y = baseline -
+            step / 4 * curveHeight;
 
         context.strokeStyle = step === 0
             ? "#94a3b8"
@@ -1468,129 +1449,73 @@ function renderHistogram() {
 
         context.stroke();
 
-
-        context.fillStyle = "#64748b";
-
-        context.textAlign = "right";
-
-        context.fillText(
-            String(value),
-            padding.left - 10,
-            y + 4
-        );
-
     }
 
 
+    /* แกน Y */
     context.strokeStyle = "#94a3b8";
-
-    context.lineWidth = 1;
 
     context.beginPath();
 
     context.moveTo(padding.left, padding.top);
 
-    context.lineTo(padding.left, padding.top + chartHeight);
+    context.lineTo(padding.left, baseline);
 
     context.stroke();
 
 
-    const slotWidth =
-        chartWidth / bins.length;
+    /* พื้นที่ใต้เส้น Density */
+    const areaGradient =
+        context.createLinearGradient(
+            0,
+            padding.top,
+            0,
+            baseline
+        );
 
+    areaGradient.addColorStop(
+        0,
+        "rgba(37, 99, 235, 0.34)"
+    );
 
-    const barWidth = Math.min(
-        slotWidth * 0.58,
-        110
+    areaGradient.addColorStop(
+        1,
+        "rgba(96, 165, 250, 0.04)"
     );
 
 
-    const points = [];
+    context.beginPath();
 
+    context.moveTo(
+        toX(densityPoints[0].x),
+        baseline
+    );
 
-    bins.forEach(
-        (bin, index) => {
-
-            const barHeight =
-                bin.count / yAxisMaximum * chartHeight;
-
-            const centerX = padding.left +
-                (index + 0.5) * slotWidth;
-
-            const x =
-                centerX - barWidth / 2;
-
-            const y =
-                padding.top + chartHeight - barHeight;
-
-
-            const gradient =
-                context.createLinearGradient(
-                    0,
-                    y,
-                    0,
-                    padding.top + chartHeight
-                );
-
-            gradient.addColorStop(0, "#2563eb");
-
-            gradient.addColorStop(1, "#60a5fa");
-
-            context.fillStyle = gradient;
-
-            drawRoundedBar(
-                context,
-                x,
-                y,
-                barWidth,
-                barHeight,
-                9
+    densityPoints.forEach(
+        point => {
+            context.lineTo(
+                toX(point.x),
+                toY(point.density)
             );
-
-
-            points.push({
-                x: centerX,
-                y,
-                count: bin.count
-            });
-
-
-            context.fillStyle = "#1e293b";
-
-            context.font = "bold 13px Arial, sans-serif";
-
-            context.textAlign = "center";
-
-            if (bin.count > 0) {
-
-                context.fillText(
-                    String(bin.count),
-                    centerX,
-                    Math.max(y - 10, 16)
-                );
-
-            }
-
-
-            /* เลขแกน X อยู่กึ่งกลางใต้แท่ง */
-            context.fillStyle = "#334155";
-
-            context.font = "bold 14px Arial, sans-serif";
-
-            context.fillText(
-                String(bin.value),
-                centerX,
-                padding.top + chartHeight + 24
-            );
-
         }
     );
 
+    context.lineTo(
+        toX(densityPoints[densityPoints.length - 1].x),
+        baseline
+    );
 
-    /* เส้น Frequency polygon เชื่อมยอดแท่ง */
+    context.closePath();
+
+    context.fillStyle = areaGradient;
+
+    context.fill();
+
+
+    /* เส้นโค้ง Sampling distribution */
     context.save();
 
-    context.strokeStyle = "#f97316";
+    context.strokeStyle = "#2563eb";
 
     context.lineWidth = 3;
 
@@ -1598,52 +1523,103 @@ function renderHistogram() {
 
     context.lineCap = "round";
 
-    context.shadowColor = "rgba(249, 115, 22, 0.25)";
+    context.shadowColor = "rgba(37, 99, 235, 0.22)";
 
     context.shadowBlur = 8;
 
     context.beginPath();
 
-
-    points.forEach(
+    densityPoints.forEach(
         (point, index) => {
 
+            const x = toX(point.x);
+
+            const y = toY(point.density);
+
             if (index === 0) {
-                context.moveTo(point.x, point.y);
+                context.moveTo(x, y);
             } else {
-                context.lineTo(point.x, point.y);
+                context.lineTo(x, y);
             }
 
         }
     );
-
 
     context.stroke();
 
     context.restore();
 
 
-    /* จุดบนเส้นช่วยอ่านค่าของแต่ละแท่ง */
-    points.forEach(
-        point => {
+    /* เส้นค่าเฉลี่ยรวม */
+    const overallMeanX = toX(overallMean);
+
+    context.save();
+
+    context.setLineDash([5, 5]);
+
+    context.strokeStyle = "#7c3aed";
+
+    context.lineWidth = 2;
+
+    context.beginPath();
+
+    context.moveTo(overallMeanX, padding.top);
+
+    context.lineTo(overallMeanX, baseline);
+
+    context.stroke();
+
+    context.restore();
+
+
+    context.fillStyle = "#6d28d9";
+
+    context.font = "bold 12px Arial, sans-serif";
+
+    context.textAlign = "center";
+
+    context.fillText(
+        `x̄ = ${formatMean(overallMean)}`,
+        overallMeanX,
+        padding.top - 12
+    );
+
+
+    /* จุดข้อมูลวางตามค่าเฉลี่ยจริงของแต่ละรอบ */
+    const pointLayers = new Map();
+
+
+    means.forEach(
+        value => {
+
+            const key = value.toFixed(4);
+
+            const layer = pointLayers.get(key) || 0;
+
+            pointLayers.set(key, layer + 1);
+
+
+            const pointY = baseline - 8 -
+                Math.min(layer, 5) * 9;
+
 
             context.beginPath();
 
             context.arc(
-                point.x,
-                point.y,
-                5,
+                toX(value),
+                pointY,
+                4.5,
                 0,
                 Math.PI * 2
             );
 
-            context.fillStyle = "white";
+            context.fillStyle = "#f97316";
 
             context.fill();
 
-            context.strokeStyle = "#f97316";
+            context.strokeStyle = "white";
 
-            context.lineWidth = 3;
+            context.lineWidth = 1.5;
 
             context.stroke();
 
@@ -1651,39 +1627,32 @@ function renderHistogram() {
     );
 
 
-    /* Legend */
-    context.strokeStyle = "#f97316";
+    /* แกน X คงที่ 1 - 5 */
+    for (
+        let tick = 1;
+        tick <= 5;
+        tick++
+    ) {
 
-    context.lineWidth = 3;
+        const x = toX(tick);
 
-    context.beginPath();
 
-    context.moveTo(
-        padding.left + chartWidth - 145,
-        20
-    );
+        context.fillStyle = "#334155";
 
-    context.lineTo(
-        padding.left + chartWidth - 115,
-        20
-    );
+        context.font = "bold 14px Arial, sans-serif";
 
-    context.stroke();
+        context.textAlign = "center";
 
-    context.fillStyle = "#475569";
+        context.fillText(
+            String(tick),
+            x,
+            baseline + 24
+        );
+
+    }
+
 
     context.font = "12px Arial, sans-serif";
-
-    context.textAlign = "left";
-
-    context.fillText(
-        "แนวโน้มการกระจาย",
-        padding.left + chartWidth - 108,
-        24
-    );
-
-
-    context.textAlign = "center";
 
     context.fillText(
         "ค่าเฉลี่ยต่อรอบ",
@@ -1700,12 +1669,65 @@ function renderHistogram() {
 
     context.textAlign = "center";
 
-    context.fillText("ความถี่ (รอบ)", 0, 0);
+    context.fillText(
+        "ความหนาแน่นโดยประมาณ",
+        0,
+        0
+    );
 
     context.restore();
 
 
-    const overallMean = calculateMean(means);
+    /* Legend */
+    context.fillStyle = "#f97316";
+
+    context.beginPath();
+
+    context.arc(
+        padding.left + chartWidth - 190,
+        20,
+        4,
+        0,
+        Math.PI * 2
+    );
+
+    context.fill();
+
+    context.fillStyle = "#475569";
+
+    context.textAlign = "left";
+
+    context.fillText(
+        "ค่าเฉลี่ยแต่ละรอบ",
+        padding.left + chartWidth - 180,
+        24
+    );
+
+    context.strokeStyle = "#2563eb";
+
+    context.lineWidth = 3;
+
+    context.beginPath();
+
+    context.moveTo(
+        padding.left + chartWidth - 85,
+        20
+    );
+
+    context.lineTo(
+        padding.left + chartWidth - 55,
+        20
+    );
+
+    context.stroke();
+
+    context.fillStyle = "#475569";
+
+    context.fillText(
+        "Density",
+        padding.left + chartWidth - 48,
+        24
+    );
 
     summary.innerText =
         `${means.length} รอบ | ค่าเฉลี่ยรวม ${formatMean(overallMean)}`;
