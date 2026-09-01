@@ -386,6 +386,103 @@
             font-weight: bold;
         }
 
+        /* Completion gimmick */
+
+        .completion-gimmick {
+            position: relative;
+            overflow: hidden;
+            margin-top: 24px;
+            padding: 26px;
+            text-align: center;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(255,255,255,0.35), transparent 28%),
+                linear-gradient(135deg, #4f46e5 0%, #7c3aed 52%, #db2777 100%);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 20px;
+            box-shadow: 0 18px 45px rgba(91, 33, 182, 0.24);
+            color: white;
+            animation: gimmickEnter 0.5s ease;
+        }
+
+        .completion-gimmick::before,
+        .completion-gimmick::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .completion-gimmick::before {
+            width: 170px;
+            height: 170px;
+            top: -95px;
+            right: -40px;
+        }
+
+        .completion-gimmick::after {
+            width: 110px;
+            height: 110px;
+            bottom: -65px;
+            left: -25px;
+        }
+
+        .gimmick-icon {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 6px;
+            font-size: 34px;
+        }
+
+        .gimmick-kicker {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 5px;
+            font-size: 15px;
+            font-weight: bold;
+            opacity: 0.85;
+        }
+
+        .countdown-text {
+            position: relative;
+            z-index: 1;
+            margin: 0 auto 18px;
+            font-size: clamp(18px, 3vw, 26px);
+            font-weight: bold;
+            line-height: 1.5;
+            text-wrap: balance;
+        }
+
+        .quote-card {
+            position: relative;
+            z-index: 1;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.24);
+            border-radius: 14px;
+            backdrop-filter: blur(8px);
+        }
+
+        .quote-card blockquote {
+            margin: 0;
+            font-size: clamp(16px, 2.5vw, 20px);
+            font-weight: bold;
+            line-height: 1.55;
+        }
+
+        @keyframes gimmickEnter {
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
         /* Mobile */
 
         @media (max-width: 600px) {
@@ -695,6 +792,32 @@
             id="message"
         ></div>
 
+
+        <div
+            class="completion-gimmick"
+            id="completionGimmick"
+            hidden
+        >
+
+            <div class="gimmick-icon">
+                ⏳
+            </div>
+
+            <div class="gimmick-kicker">
+                รู้หรือไม่
+            </div>
+
+            <div
+                class="countdown-text"
+                id="examCountdown"
+            ></div>
+
+            <div class="quote-card">
+                <blockquote id="randomQuote"></blockquote>
+            </div>
+
+        </div>
+
     </div>
 
 </div>
@@ -743,6 +866,27 @@ let isRunning = false;
 */
 
 let historyData = [];
+
+
+const midtermDate =
+    new Date("2026-10-03T09:00:00+07:00");
+
+
+const randomQuotes = [
+    "เจ็บกว่าการถูกหลอก คือเชื่อมาตลอดว่าเขารักเรา",
+    "ไม่ใช่ลืมเธอไม่ลง แต่มันคงลืมเธอไม่ได้",
+    "งานหนักไม่เคยฆ่าใคร แต่คืนนี้ก็ไม่แน่",
+    "ทุกความสำเร็จเริ่มจากการเปิดไฟล์เปล่า",
+    "วันนี้ไม่อ่าน พรุ่งนี้ก็ไม่อ่านเหมือนเดิม",
+    "ความพยายามอยู่ที่ไหน งานใหม่อยู่ที่นั่น",
+    "สู้ชีวิต แต่ชีวิตสู้กลับ",
+    "ทุกการเติบโต ย่อมปวดหลังเสมอ",
+    "สู้งานแทบตาย สุดท้ายงานสู้เรา",
+    "ผิวที่แตกลาย ยังดีกว่าใจที่แตกร้าว"
+];
+
+
+let countdownTimer = null;
 
 
 
@@ -957,6 +1101,9 @@ function startDrawing() {
 
     document.getElementById("historySection")
         .hidden = false;
+
+
+    hideCompletionGimmick();
 
 
     /*
@@ -2008,6 +2155,124 @@ function finishDrawing() {
         .innerText =
         `🎉 สุ่มครบ ${totalDraws} ครั้งแล้ว`;
 
+
+    showCompletionGimmick();
+
+}
+
+
+
+/*
+==================================================
+Countdown และคำคมหลังสุ่มครบ
+==================================================
+*/
+
+function getCountdownParts(now = new Date()) {
+
+    const remaining =
+        midtermDate.getTime() - now.getTime();
+
+
+    if (remaining <= 0) {
+        return null;
+    }
+
+
+    const totalSeconds =
+        Math.floor(remaining / 1000);
+
+
+    return {
+        days: Math.floor(totalSeconds / 86400),
+        hours: Math.floor(
+            totalSeconds % 86400 / 3600
+        ),
+        minutes: Math.floor(
+            totalSeconds % 3600 / 60
+        ),
+        seconds: totalSeconds % 60
+    };
+
+}
+
+
+function updateExamCountdown() {
+
+    const countdown =
+        document.getElementById("examCountdown");
+
+    const parts = getCountdownParts();
+
+
+    if (!parts) {
+
+        countdown.innerText =
+            "ถึงเวลาสอบ midterm แล้ว ✍️";
+
+        return;
+
+    }
+
+
+    countdown.innerText =
+        `อีก ${parts.days} วัน ` +
+        `${parts.hours} ชั่วโมง ` +
+        `${parts.minutes} นาที ` +
+        `${parts.seconds} วินาที สอบ midterm`;
+
+}
+
+
+function showCompletionGimmick() {
+
+    const gimmick =
+        document.getElementById("completionGimmick");
+
+
+    const quote = randomQuotes[
+        Math.floor(
+            Math.random() * randomQuotes.length
+        )
+    ];
+
+
+    document.getElementById("randomQuote")
+        .innerText = `“${quote}”`;
+
+
+    gimmick.hidden = false;
+
+    updateExamCountdown();
+
+
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+    }
+
+
+    countdownTimer = setInterval(
+        updateExamCountdown,
+        1000
+    );
+
+}
+
+
+function hideCompletionGimmick() {
+
+    document.getElementById("completionGimmick")
+        .hidden = true;
+
+
+    if (countdownTimer) {
+
+        clearInterval(countdownTimer);
+
+        countdownTimer = null;
+
+    }
+
 }
 
 
@@ -2443,6 +2708,9 @@ function resetGame() {
 
     document.getElementById("historySection")
         .hidden = true;
+
+
+    hideCompletionGimmick();
 
 
     /*
