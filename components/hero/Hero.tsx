@@ -13,8 +13,8 @@ export function Hero() {
         <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
           <div>
             <p className="mb-3 text-sm font-semibold tracking-[0.18em] text-indigo-300">QA RANDOM · CENTRAL LIMIT THEOREM</p>
-            <h1 className="max-w-4xl text-balance text-4xl font-bold leading-[1.04] tracking-[-0.045em] text-white sm:text-6xl lg:text-7xl">
-              เปลี่ยนการสุ่ม ให้มองเห็น<span className="gradient-text">รูปทรงของข้อมูล</span>
+            <h1 className="max-w-4xl text-balance text-4xl font-bold leading-[1.3] tracking-[-0.035em] text-white sm:text-6xl sm:leading-[1.24] lg:text-7xl lg:leading-[1.22]">
+              เปลี่ยนการสุ่ม ให้มองเห็น<span className="gradient-text pb-[0.12em]">รูปทรงของข้อมูล</span>
             </h1>
             <p className="mt-6 max-w-2xl text-pretty text-base leading-8 text-slate-300 sm:text-lg">
               ทดลองหยิบฉลากซ้ำหลายรอบ สังเกตค่าเฉลี่ยของแต่ละตัวอย่าง และดูว่า sampling distribution ก่อตัวขึ้นอย่างไรจากข้อมูลจริง
