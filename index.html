@@ -308,30 +308,42 @@
 
         .histogram-header h3 {
             margin: 0;
+            color: #1e293b;
         }
 
         .histogram-summary {
-            color: #666;
+            color: #1d4ed8;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 999px;
+            padding: 7px 12px;
             font-size: 14px;
+            font-weight: bold;
         }
 
         .histogram-wrapper {
             position: relative;
-            min-height: 340px;
-            padding: 10px;
-            background: #f8fafc;
-            border-radius: 12px;
+            min-height: 380px;
+            padding: 14px;
+            background: linear-gradient(180deg, #f8fbff 0%, #f1f5ff 100%);
+            border: 1px solid #dbeafe;
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.08);
         }
 
         #histogramCanvas {
             display: none;
             width: 100%;
-            height: 320px;
+            height: 350px;
         }
 
         .histogram-note {
-            margin: 10px 0 0;
+            margin: 12px 0 0;
+            padding: 10px 12px;
             color: #64748b;
+            background: #f8fafc;
+            border-left: 3px solid #60a5fa;
+            border-radius: 0 8px 8px 0;
             font-size: 13px;
             line-height: 1.5;
         }
@@ -635,8 +647,9 @@
             </div>
 
             <p class="histogram-note">
-                หมายเหตุ: หากหยิบครบทุกใบ ค่าเฉลี่ยจะเท่ากันทุกครั้ง
-                ควรกำหนดจำนวนใบต่อครั้งให้น้อยกว่าจำนวนฉลากรวมเพื่อสังเกตการกระจาย
+                ค่าเฉลี่ยทศนิยมจะถูกจัดเข้ากลุ่มเลขที่ใกล้ที่สุด 1–5
+                และเส้นสีส้มเชื่อมยอดแท่งเพื่อช่วยมองรูปทรงการกระจาย
+                หากหยิบครบทุกใบ ค่าเฉลี่ยจะเท่ากันทุกครั้ง
             </p>
 
         </div>
@@ -1241,34 +1254,10 @@ function buildHistogram(values) {
     }
 
 
-    /*
-        ตรึงแกน X ไว้ที่ 1 - 5
-        แต่ยังแบ่ง bin ย่อยเพื่อเก็บรายละเอียดของค่าเฉลี่ยทศนิยม
-    */
-    const minimum = 1;
-
-    const maximum = 5;
-
-
-    /* Sturges' rule พร้อมจำนวน bin ขั้นต่ำสำหรับช่วง 1 - 5 */
-    const binCount = Math.min(
-        12,
-        Math.max(
-            8,
-            Math.ceil(Math.log2(values.length) + 1)
-        )
-    );
-
-
-    const binWidth =
-        (maximum - minimum) / binCount;
-
-
     const bins = Array.from(
-        { length: binCount },
+        { length: 5 },
         (_, index) => ({
-            start: minimum + index * binWidth,
-            end: minimum + (index + 1) * binWidth,
+            value: index + 1,
             count: 0
         })
     );
@@ -1277,11 +1266,12 @@ function buildHistogram(values) {
     values.forEach(
         value => {
 
-            const index = Math.min(
-                Math.floor(
-                    (value - minimum) / binWidth
-                ),
-                binCount - 1
+            const index = Math.max(
+                0,
+                Math.min(
+                    4,
+                    Math.round(value) - 1
+                )
             );
 
             bins[index].count++;
@@ -1291,6 +1281,61 @@ function buildHistogram(values) {
 
 
     return bins;
+
+}
+
+
+function drawRoundedBar(
+    context,
+    x,
+    y,
+    width,
+    height,
+    radius
+) {
+
+    if (height <= 0) {
+        return;
+    }
+
+
+    const cornerRadius = Math.min(
+        radius,
+        width / 2,
+        height
+    );
+
+
+    context.beginPath();
+
+    context.moveTo(x, y + height);
+
+    context.lineTo(x, y + cornerRadius);
+
+    context.quadraticCurveTo(
+        x,
+        y,
+        x + cornerRadius,
+        y
+    );
+
+    context.lineTo(
+        x + width - cornerRadius,
+        y
+    );
+
+    context.quadraticCurveTo(
+        x + width,
+        y,
+        x + width,
+        y + cornerRadius
+    );
+
+    context.lineTo(x + width, y + height);
+
+    context.closePath();
+
+    context.fill();
 
 }
 
@@ -1337,7 +1382,7 @@ function renderHistogram() {
         640
     );
 
-    const height = 320;
+    const height = 350;
 
     const pixelRatio =
         window.devicePixelRatio || 1;
@@ -1364,10 +1409,10 @@ function renderHistogram() {
 
 
     const padding = {
-        top: 20,
-        right: 20,
-        bottom: 55,
-        left: 55
+        top: 45,
+        right: 24,
+        bottom: 58,
+        left: 60
     };
 
     const chartWidth =
@@ -1381,6 +1426,62 @@ function renderHistogram() {
     );
 
 
+    const gridSteps = 5;
+
+    const yAxisMaximum = Math.max(
+        5,
+        Math.ceil(maximumCount / gridSteps) * gridSteps
+    );
+
+
+    context.font = "12px Arial, sans-serif";
+
+    context.lineWidth = 1;
+
+
+    /* เส้น Grid และตัวเลขแกน Y */
+    for (
+        let step = 0;
+        step <= gridSteps;
+        step++
+    ) {
+
+        const value =
+            step / gridSteps * yAxisMaximum;
+
+        const y = padding.top + chartHeight -
+            step / gridSteps * chartHeight;
+
+
+        context.strokeStyle = step === 0
+            ? "#94a3b8"
+            : "#dbeafe";
+
+        context.beginPath();
+
+        context.moveTo(padding.left, y);
+
+        context.lineTo(
+            padding.left + chartWidth,
+            y
+        );
+
+        context.stroke();
+
+
+        context.fillStyle = "#64748b";
+
+        context.textAlign = "right";
+
+        context.fillText(
+            String(value),
+            padding.left - 10,
+            y + 4
+        );
+
+    }
+
+
     context.strokeStyle = "#94a3b8";
 
     context.lineWidth = 1;
@@ -1391,11 +1492,6 @@ function renderHistogram() {
 
     context.lineTo(padding.left, padding.top + chartHeight);
 
-    context.lineTo(
-        padding.left + chartWidth,
-        padding.top + chartHeight
-    );
-
     context.stroke();
 
 
@@ -1403,32 +1499,65 @@ function renderHistogram() {
         chartWidth / bins.length;
 
 
+    const barWidth = Math.min(
+        slotWidth * 0.58,
+        110
+    );
+
+
+    const points = [];
+
+
     bins.forEach(
         (bin, index) => {
 
             const barHeight =
-                bin.count / maximumCount * chartHeight;
+                bin.count / yAxisMaximum * chartHeight;
+
+            const centerX = padding.left +
+                (index + 0.5) * slotWidth;
 
             const x =
-                padding.left + index * slotWidth + 3;
+                centerX - barWidth / 2;
 
             const y =
                 padding.top + chartHeight - barHeight;
 
 
-            context.fillStyle = "#2563eb";
+            const gradient =
+                context.createLinearGradient(
+                    0,
+                    y,
+                    0,
+                    padding.top + chartHeight
+                );
 
-            context.fillRect(
+            gradient.addColorStop(0, "#2563eb");
+
+            gradient.addColorStop(1, "#60a5fa");
+
+            context.fillStyle = gradient;
+
+            drawRoundedBar(
+                context,
                 x,
                 y,
-                Math.max(slotWidth - 6, 1),
-                barHeight
+                barWidth,
+                barHeight,
+                9
             );
 
 
-            context.fillStyle = "#334155";
+            points.push({
+                x: centerX,
+                y,
+                count: bin.count
+            });
 
-            context.font = "12px Arial, sans-serif";
+
+            context.fillStyle = "#1e293b";
+
+            context.font = "bold 13px Arial, sans-serif";
 
             context.textAlign = "center";
 
@@ -1436,53 +1565,122 @@ function renderHistogram() {
 
                 context.fillText(
                     String(bin.count),
-                    x + Math.max(slotWidth - 6, 1) / 2,
-                    Math.max(y - 6, 12)
+                    centerX,
+                    Math.max(y - 10, 16)
                 );
 
+            }
+
+
+            /* เลขแกน X อยู่กึ่งกลางใต้แท่ง */
+            context.fillStyle = "#334155";
+
+            context.font = "bold 14px Arial, sans-serif";
+
+            context.fillText(
+                String(bin.value),
+                centerX,
+                padding.top + chartHeight + 24
+            );
+
+        }
+    );
+
+
+    /* เส้น Frequency polygon เชื่อมยอดแท่ง */
+    context.save();
+
+    context.strokeStyle = "#f97316";
+
+    context.lineWidth = 3;
+
+    context.lineJoin = "round";
+
+    context.lineCap = "round";
+
+    context.shadowColor = "rgba(249, 115, 22, 0.25)";
+
+    context.shadowBlur = 8;
+
+    context.beginPath();
+
+
+    points.forEach(
+        (point, index) => {
+
+            if (index === 0) {
+                context.moveTo(point.x, point.y);
+            } else {
+                context.lineTo(point.x, point.y);
             }
 
         }
     );
 
 
-    /* แกน X แบบคงที่ 1, 2, 3, 4, 5 */
-    for (
-        let tick = 1;
-        tick <= 5;
-        tick++
-    ) {
+    context.stroke();
 
-        const x = padding.left +
-            (tick - 1) / 4 * chartWidth;
+    context.restore();
 
 
-        context.beginPath();
+    /* จุดบนเส้นช่วยอ่านค่าของแต่ละแท่ง */
+    points.forEach(
+        point => {
 
-        context.moveTo(
-            x,
-            padding.top + chartHeight
-        );
+            context.beginPath();
 
-        context.lineTo(
-            x,
-            padding.top + chartHeight + 5
-        );
+            context.arc(
+                point.x,
+                point.y,
+                5,
+                0,
+                Math.PI * 2
+            );
 
-        context.stroke();
+            context.fillStyle = "white";
+
+            context.fill();
+
+            context.strokeStyle = "#f97316";
+
+            context.lineWidth = 3;
+
+            context.stroke();
+
+        }
+    );
 
 
-        context.fillStyle = "#334155";
+    /* Legend */
+    context.strokeStyle = "#f97316";
 
-        context.textAlign = "center";
+    context.lineWidth = 3;
 
-        context.fillText(
-            String(tick),
-            x,
-            padding.top + chartHeight + 20
-        );
+    context.beginPath();
 
-    }
+    context.moveTo(
+        padding.left + chartWidth - 145,
+        20
+    );
+
+    context.lineTo(
+        padding.left + chartWidth - 115,
+        20
+    );
+
+    context.stroke();
+
+    context.fillStyle = "#475569";
+
+    context.font = "12px Arial, sans-serif";
+
+    context.textAlign = "left";
+
+    context.fillText(
+        "แนวโน้มการกระจาย",
+        padding.left + chartWidth - 108,
+        24
+    );
 
 
     context.textAlign = "center";
