@@ -1,6 +1,6 @@
-# QA Random — Lottery Draw Simulator
+# QA Random — Interactive Statistics Lab
 
-A responsive web application for simulating lottery draws and exploring the sampling distribution of the mean. It is designed as a classroom aid for learning about sampling and the Central Limit Theorem.
+A premium, responsive classroom laboratory for simulating lottery draws and exploring the sampling distribution of the mean. The application demonstrates sampling without replacement and the Central Limit Theorem without presenting itself as a gambling product.
 
 🔗 [Open the live application on GitHub Pages](https://nutt-ntw.github.io/qa-random/)
 
@@ -13,7 +13,8 @@ A responsive web application for simulating lottery draws and exploring the samp
 - Calculate the mean for each round
 - Visualize sample means as a dot plot with an estimated density curve
 - Hover over a point to view its round number and mean
-- Responsive layout for desktop and mobile devices
+- Live progress, summary statistics, and a high-DPI Canvas visualization
+- Responsive, accessible layout for desktop and mobile devices
 - Copy results in an Excel-friendly format
 - Export results as CSV or Excel
 - Show an exam countdown and a random quote after all rounds finish
@@ -81,20 +82,46 @@ CSV and Excel exports place each selected ticket in its own column and include:
 
 ## Run locally
 
-This is a static web project with no package installation or build step.
-
-Open `index.html` directly, or start a local server:
+The project uses pnpm and Node.js 24 or newer.
 
 ```bash
-python3 -m http.server 8000
+pnpm install
+pnpm dev
 ```
 
-Then visit [http://localhost:8000](http://localhost:8000).
+Then visit [http://localhost:3000](http://localhost:3000).
+
+## Validation
+
+Each quality check can run independently:
+
+```bash
+pnpm run lint
+pnpm run typecheck
+pnpm test
+pnpm run build
+```
+
+The production build is a fully static export in `out/`.
+
+## GitHub Pages deployment
+
+The workflow in `.github/workflows/deploy-pages.yml` validates and deploys the static export whenever `main` is updated.
+
+Complete this one-time repository setting before the first deployment:
+
+**Repository Settings → Pages → Build and deployment → Source → GitHub Actions**
+
+The production build automatically uses `/qa-random` as its base path. Local development remains available at the root path.
 
 ## Technology
 
-- HTML, CSS, and JavaScript
+- Next.js App Router and React
+- TypeScript in strict mode
+- Tailwind CSS
+- Framer Motion
 - Canvas API for chart rendering
 - [SheetJS](https://sheetjs.com/) for Excel export
-- Noto Sans Thai and Noto Sans
+- Noto Sans Thai through `next/font`
+- Vitest for pure statistical and countdown logic
 - GitHub Pages for hosting
