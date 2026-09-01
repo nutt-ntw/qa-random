@@ -545,7 +545,11 @@
 
         <!-- ประวัติ -->
 
-        <div class="history-section">
+        <div
+            class="history-section"
+            id="historySection"
+            hidden
+        >
 
             <div class="history-header">
 
@@ -917,6 +921,10 @@ function startDrawing() {
 
     document.getElementById("historyBody")
         .innerHTML = "";
+
+
+    document.getElementById("historySection")
+        .hidden = false;
 
 
     /*
@@ -2228,6 +2236,10 @@ function resetGame() {
 
     document.getElementById("historyBody")
         .innerHTML = "";
+
+
+    document.getElementById("historySection")
+        .hidden = true;
 
 
     /*
