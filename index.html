@@ -334,7 +334,7 @@
         #histogramCanvas {
             display: none;
             width: 100%;
-            height: 350px;
+            height: auto;
         }
 
         .distribution-tooltip {
@@ -509,6 +509,12 @@
 
             .export-buttons {
                 justify-content: center;
+            }
+
+            .histogram-wrapper {
+                min-height: 0;
+                padding: 8px;
+                border-radius: 12px;
             }
 
         }
@@ -1559,10 +1565,14 @@ function renderHistogram() {
 
     const width = Math.max(
         canvas.clientWidth,
-        640
+        280
     );
 
-    const height = 350;
+    const isMobileChart = width < 600;
+
+    const height = isMobileChart
+        ? Math.max(240, Math.round(width * 0.68))
+        : 350;
 
     const pixelRatio =
         window.devicePixelRatio || 1;
@@ -1588,12 +1598,19 @@ function renderHistogram() {
     context.clearRect(0, 0, width, height);
 
 
-    const padding = {
-        top: 45,
-        right: 24,
-        bottom: 58,
-        left: 60
-    };
+    const padding = isMobileChart
+        ? {
+            top: 48,
+            right: 14,
+            bottom: 52,
+            left: 44
+        }
+        : {
+            top: 45,
+            right: 24,
+            bottom: 58,
+            left: 60
+        };
 
     const chartWidth =
         width - padding.left - padding.right;
@@ -1882,7 +1899,10 @@ function renderHistogram() {
 
     context.save();
 
-    context.translate(16, padding.top + chartHeight / 2);
+    context.translate(
+        isMobileChart ? 12 : 16,
+        padding.top + chartHeight / 2
+    );
 
     context.rotate(-Math.PI / 2);
 
@@ -1898,12 +1918,20 @@ function renderHistogram() {
 
 
     /* Legend */
+    const legendStartX = isMobileChart
+        ? padding.left
+        : padding.left + chartWidth - 190;
+
+    context.font = isMobileChart
+        ? "10px Arial, sans-serif"
+        : "12px Arial, sans-serif";
+
     context.fillStyle = "#f97316";
 
     context.beginPath();
 
     context.arc(
-        padding.left + chartWidth - 190,
+        legendStartX,
         20,
         4,
         0,
@@ -1917,8 +1945,8 @@ function renderHistogram() {
     context.textAlign = "left";
 
     context.fillText(
-        "ค่าเฉลี่ยแต่ละรอบ",
-        padding.left + chartWidth - 180,
+        isMobileChart ? "ค่าเฉลี่ย/รอบ" : "ค่าเฉลี่ยแต่ละรอบ",
+        legendStartX + 10,
         24
     );
 
@@ -1929,12 +1957,12 @@ function renderHistogram() {
     context.beginPath();
 
     context.moveTo(
-        padding.left + chartWidth - 85,
+        legendStartX + (isMobileChart ? 100 : 105),
         20
     );
 
     context.lineTo(
-        padding.left + chartWidth - 55,
+        legendStartX + (isMobileChart ? 124 : 135),
         20
     );
 
@@ -1944,7 +1972,7 @@ function renderHistogram() {
 
     context.fillText(
         "Density",
-        padding.left + chartWidth - 48,
+        legendStartX + (isMobileChart ? 130 : 142),
         24
     );
 
