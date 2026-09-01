@@ -334,7 +334,60 @@
         #histogramCanvas {
             display: none;
             width: 100%;
-            height: auto;
+            height: 350px;
+        }
+
+        .chart-legend,
+        .chart-axis-label {
+            display: none;
+            position: absolute;
+            z-index: 2;
+            color: #475569;
+            pointer-events: none;
+        }
+
+        .chart-legend {
+            top: 14px;
+            right: 24px;
+            align-items: center;
+            gap: 16px;
+            font-size: 12px;
+        }
+
+        .chart-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+        }
+
+        .chart-legend-point {
+            width: 9px;
+            height: 9px;
+            background: #f97316;
+            border-radius: 50%;
+        }
+
+        .chart-legend-line {
+            width: 30px;
+            border-top: 3px solid #2563eb;
+        }
+
+        .chart-y-label {
+            top: 50%;
+            left: 10px;
+            writing-mode: vertical-rl;
+            transform: translateY(-50%) rotate(180deg);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .chart-x-label {
+            bottom: 7px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            white-space: nowrap;
         }
 
         .distribution-tooltip {
@@ -515,6 +568,27 @@
                 min-height: 0;
                 padding: 8px;
                 border-radius: 12px;
+            }
+
+            .histogram-header h3 {
+                font-size: clamp(16px, 4.2vw, 20px);
+                line-height: 1.35;
+            }
+
+            .chart-legend {
+                top: 12px;
+                right: 14px;
+                gap: 12px;
+                font-size: 11px;
+            }
+
+            .chart-legend-line {
+                width: 24px;
+            }
+
+            .chart-y-label {
+                left: 5px;
+                font-size: 11px;
             }
 
         }
@@ -769,6 +843,25 @@
                     role="img"
                     aria-label="กราฟเส้นโค้งและจุด แสดง sampling distribution ของค่าเฉลี่ยแต่ละรอบ"
                 ></canvas>
+
+                <div class="chart-legend" id="chartLegend" aria-hidden="true">
+                    <span class="chart-legend-item">
+                        <span class="chart-legend-point"></span>
+                        ค่าเฉลี่ย/รอบ
+                    </span>
+                    <span class="chart-legend-item">
+                        <span class="chart-legend-line"></span>
+                        Density
+                    </span>
+                </div>
+
+                <div class="chart-axis-label chart-y-label" id="chartYLabel">
+                    ความหนาแน่นโดยประมาณ
+                </div>
+
+                <div class="chart-axis-label chart-x-label" id="chartXLabel">
+                    ค่าเฉลี่ยต่อรอบ
+                </div>
 
                 <div
                     class="distribution-tooltip"
@@ -1532,6 +1625,12 @@ function renderHistogram() {
     const summary =
         document.getElementById("histogramSummary");
 
+    const chartLabels = [
+        document.getElementById("chartLegend"),
+        document.getElementById("chartYLabel"),
+        document.getElementById("chartXLabel")
+    ];
+
 
     if (historyData.length === 0) {
 
@@ -1545,6 +1644,10 @@ function renderHistogram() {
             .style.display = "none";
 
         summary.innerText = "ยังไม่มีข้อมูล";
+
+        chartLabels.forEach(label => {
+            label.style.display = "none";
+        });
 
         return;
 
@@ -1562,25 +1665,33 @@ function renderHistogram() {
 
     canvas.style.display = "block";
 
+    chartLabels.forEach(label => {
+        label.style.display = label.id === "chartLegend"
+            ? "flex"
+            : "block";
+    });
+
 
     const width = Math.max(
-        canvas.clientWidth,
-        280
+        Math.floor(canvas.getBoundingClientRect().width),
+        220
     );
 
     const isMobileChart = width < 600;
 
     const height = isMobileChart
-        ? Math.max(240, Math.round(width * 0.68))
+        ? Math.max(220, Math.round(width * 0.74))
         : 350;
 
     const pixelRatio =
         window.devicePixelRatio || 1;
 
 
-    canvas.width = width * pixelRatio;
+    canvas.style.height = `${height}px`;
 
-    canvas.height = height * pixelRatio;
+    canvas.width = Math.round(width * pixelRatio);
+
+    canvas.height = Math.round(height * pixelRatio);
 
 
     const context =
@@ -1600,10 +1711,10 @@ function renderHistogram() {
 
     const padding = isMobileChart
         ? {
-            top: 48,
-            right: 14,
-            bottom: 52,
-            left: 44
+            top: 54,
+            right: 12,
+            bottom: 48,
+            left: 48
         }
         : {
             top: 45,
@@ -1887,94 +1998,6 @@ function renderHistogram() {
 
     }
 
-
-    context.font = "12px Arial, sans-serif";
-
-    context.fillText(
-        "ค่าเฉลี่ยต่อรอบ",
-        padding.left + chartWidth / 2,
-        height - 5
-    );
-
-
-    context.save();
-
-    context.translate(
-        isMobileChart ? 12 : 16,
-        padding.top + chartHeight / 2
-    );
-
-    context.rotate(-Math.PI / 2);
-
-    context.textAlign = "center";
-
-    context.fillText(
-        "ความหนาแน่นโดยประมาณ",
-        0,
-        0
-    );
-
-    context.restore();
-
-
-    /* Legend */
-    const legendStartX = isMobileChart
-        ? padding.left
-        : padding.left + chartWidth - 190;
-
-    context.font = isMobileChart
-        ? "10px Arial, sans-serif"
-        : "12px Arial, sans-serif";
-
-    context.fillStyle = "#f97316";
-
-    context.beginPath();
-
-    context.arc(
-        legendStartX,
-        20,
-        4,
-        0,
-        Math.PI * 2
-    );
-
-    context.fill();
-
-    context.fillStyle = "#475569";
-
-    context.textAlign = "left";
-
-    context.fillText(
-        isMobileChart ? "ค่าเฉลี่ย/รอบ" : "ค่าเฉลี่ยแต่ละรอบ",
-        legendStartX + 10,
-        24
-    );
-
-    context.strokeStyle = "#2563eb";
-
-    context.lineWidth = 3;
-
-    context.beginPath();
-
-    context.moveTo(
-        legendStartX + (isMobileChart ? 100 : 105),
-        20
-    );
-
-    context.lineTo(
-        legendStartX + (isMobileChart ? 124 : 135),
-        20
-    );
-
-    context.stroke();
-
-    context.fillStyle = "#475569";
-
-    context.fillText(
-        "Density",
-        legendStartX + (isMobileChart ? 130 : 142),
-        24
-    );
 
     summary.innerText =
         `${means.length} รอบ | ค่าเฉลี่ยรวม ${formatMean(overallMean)}`;
