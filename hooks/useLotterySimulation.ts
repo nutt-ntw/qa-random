@@ -1,14 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useReducedMotion } from "framer-motion";
 import { QUOTES } from "@/data/quotes";
 import { summarizeResults } from "@/lib/statistics";
 import { buildPopulation, DEFAULT_INPUTS, generateRound, validateConfiguration } from "@/lib/simulation";
 import { TICKET_VALUES, type DrawResult, type TicketInputs, type TicketValue, type ValidationErrors } from "@/types";
 
 const EMPTY_ERRORS: ValidationErrors = { counts: {} };
-const TARGET_RENDER_UPDATES = 24;
+const ROUND_DELAY_MS = 1_000;
 
 export function useLotterySimulation() {
   const [inputs, setInputs] = useState<TicketInputs>(DEFAULT_INPUTS);
@@ -20,7 +19,6 @@ export function useLotterySimulation() {
   const [completionQuote, setCompletionQuote] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const runningRef = useRef(false);
-  const reducedMotion = useReducedMotion();
 
   useEffect(() => () => abortControllerRef.current?.abort(), []);
 
@@ -49,11 +47,6 @@ export function useLotterySimulation() {
     setCompletionQuote(null);
     setErrors(EMPTY_ERRORS);
   }, [cancelCurrentRun, inputs.rounds]);
-
-  const prepareAnotherExperiment = useCallback(() => {
-    reset();
-    document.getElementById("experiment-controls")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
-  }, [reducedMotion, reset]);
 
   const setCount = useCallback((value: TicketValue, count: string) => {
     setInputs((current) => ({ ...current, counts: { ...current.counts, [value]: count } }));
@@ -85,21 +78,16 @@ export function useLotterySimulation() {
 
     const population = buildPopulation(configuration.tickets);
     const generated: DrawResult[] = [];
-    const batchSize = Math.max(1, Math.ceil(configuration.rounds / TARGET_RENDER_UPDATES));
 
     for (let index = 0; index < configuration.rounds; index += 1) {
       if (controller.signal.aborted) return;
 
       generated.push(generateRound(population, configuration.sampleSize, index + 1));
-      const shouldRender = index === 0 || index === configuration.rounds - 1 || (index + 1) % batchSize === 0;
+      setResults([...generated]);
+      setCurrentRound(index + 1);
 
-      if (shouldRender) {
-        setResults([...generated]);
-        setCurrentRound(index + 1);
-
-        const shouldContinue = index === 0 && configuration.rounds > 1 && !reducedMotion
-          ? await waitFor(320, controller.signal)
-          : await nextFrame(controller.signal);
+      if (index < configuration.rounds - 1) {
+        const shouldContinue = await waitFor(ROUND_DELAY_MS, controller.signal);
         if (!shouldContinue) return;
       }
     }
@@ -108,7 +96,7 @@ export function useLotterySimulation() {
     abortControllerRef.current = null;
     setIsRunning(false);
     setCompletionQuote(QUOTES[Math.floor(Math.random() * QUOTES.length)]);
-  }, [inputs, reducedMotion]);
+  }, [inputs]);
 
   return {
     inputs,
@@ -126,7 +114,6 @@ export function useLotterySimulation() {
     setField,
     start,
     reset,
-    prepareAnotherExperiment,
   };
 }
 
@@ -138,21 +125,6 @@ function waitFor(milliseconds: number, signal: AbortSignal): Promise<boolean> {
     }, milliseconds);
     const handleAbort = () => {
       window.clearTimeout(timeout);
-      signal.removeEventListener("abort", handleAbort);
-      resolve(false);
-    };
-    signal.addEventListener("abort", handleAbort, { once: true });
-  });
-}
-
-function nextFrame(signal: AbortSignal): Promise<boolean> {
-  return new Promise((resolve) => {
-    const frame = window.requestAnimationFrame(() => {
-      signal.removeEventListener("abort", handleAbort);
-      resolve(true);
-    });
-    const handleAbort = () => {
-      window.cancelAnimationFrame(frame);
       signal.removeEventListener("abort", handleAbort);
       resolve(false);
     };

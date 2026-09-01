@@ -1,4 +1,4 @@
-# QA Random — Interactive Statistics Lab
+# QA Random — I LOVE Quantitative Analysis LAB
 
 A premium, responsive classroom laboratory for simulating lottery draws and exploring the sampling distribution of the mean. The application demonstrates sampling without replacement and the Central Limit Theorem without presenting itself as a gambling product.
 

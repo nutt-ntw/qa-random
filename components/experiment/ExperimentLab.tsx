@@ -106,7 +106,7 @@ export function ExperimentLab() {
       <ResultsHistory results={simulation.results} onCopy={() => void handleCopy()} onCsv={handleCsv} onExcel={() => void handleExcel()} />
 
       {simulation.completionQuote ? (
-        <CompletionCelebration quote={simulation.completionQuote} rounds={simulation.totalRounds} onRunAgain={simulation.prepareAnotherExperiment} onShare={() => void handleShare()} />
+        <CompletionCelebration quote={simulation.completionQuote} rounds={simulation.totalRounds} onRunAgain={() => void simulation.start()} onShare={() => void handleShare()} />
       ) : null}
 
       <Toast toast={toast} />
