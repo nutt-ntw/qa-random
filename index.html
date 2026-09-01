@@ -337,6 +337,32 @@
             height: 350px;
         }
 
+        .distribution-tooltip {
+            position: absolute;
+            z-index: 10;
+            display: none;
+            min-width: 130px;
+            padding: 9px 11px;
+            color: white;
+            background: rgba(15, 23, 42, 0.94);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.22);
+            font-size: 13px;
+            line-height: 1.45;
+            pointer-events: none;
+            backdrop-filter: blur(6px);
+        }
+
+        .distribution-tooltip strong,
+        .distribution-tooltip span {
+            display: block;
+        }
+
+        .distribution-tooltip span {
+            color: #bfdbfe;
+        }
+
         .histogram-note {
             margin: 12px 0 0;
             padding: 10px 12px;
@@ -640,6 +666,12 @@
                     role="img"
                     aria-label="กราฟเส้นโค้งและจุด แสดง sampling distribution ของค่าเฉลี่ยแต่ละรอบ"
                 ></canvas>
+
+                <div
+                    class="distribution-tooltip"
+                    id="distributionTooltip"
+                    role="tooltip"
+                ></div>
 
                 <div
                     class="empty"
@@ -1340,7 +1372,12 @@ function renderHistogram() {
 
         canvas.style.display = "none";
 
+        canvas.distributionPoints = [];
+
         empty.style.display = "block";
+
+        document.getElementById("distributionTooltip")
+            .style.display = "none";
 
         summary.innerText = "ยังไม่มีข้อมูล";
 
@@ -1596,9 +1633,13 @@ function renderHistogram() {
     /* จุดข้อมูลวางตามค่าเฉลี่ยจริงของแต่ละรอบ */
     const pointLayers = new Map();
 
+    const renderedPoints = [];
 
-    means.forEach(
-        value => {
+
+    historyData.forEach(
+        item => {
+
+            const value = item.mean;
 
             const key = value.toFixed(4);
 
@@ -1631,8 +1672,19 @@ function renderHistogram() {
 
             context.stroke();
 
+
+            renderedPoints.push({
+                x: toX(value),
+                y: pointY,
+                draw: item.draw,
+                value
+            });
+
         }
     );
+
+
+    canvas.distributionPoints = renderedPoints;
 
 
     /* แกน X คงที่ 1 - 5 */
@@ -1739,6 +1791,157 @@ function renderHistogram() {
 
     summary.innerText =
         `${means.length} รอบ | ค่าเฉลี่ยรวม ${formatMean(overallMean)}`;
+
+}
+
+
+
+/*
+==================================================
+Tooltip ของจุด Sampling distribution
+==================================================
+*/
+
+function setupDistributionTooltip() {
+
+    const canvas =
+        document.getElementById("histogramCanvas");
+
+    const tooltip =
+        document.getElementById("distributionTooltip");
+
+    const wrapper =
+        canvas.parentElement;
+
+
+    canvas.addEventListener(
+        "mousemove",
+        event => {
+
+            const points =
+                canvas.distributionPoints || [];
+
+            const canvasRect =
+                canvas.getBoundingClientRect();
+
+
+            const mouseX =
+                (event.clientX - canvasRect.left) *
+                canvas.width /
+                canvasRect.width /
+                (window.devicePixelRatio || 1);
+
+            const mouseY =
+                (event.clientY - canvasRect.top) *
+                canvas.height /
+                canvasRect.height /
+                (window.devicePixelRatio || 1);
+
+
+            let closestPoint = null;
+
+            let closestDistance = Infinity;
+
+
+            points.forEach(
+                point => {
+
+                    const distance = Math.hypot(
+                        point.x - mouseX,
+                        point.y - mouseY
+                    );
+
+
+                    if (
+                        distance < closestDistance
+                    ) {
+
+                        closestDistance = distance;
+
+                        closestPoint = point;
+
+                    }
+
+                }
+            );
+
+
+            if (
+                !closestPoint ||
+                closestDistance > 12
+            ) {
+
+                tooltip.style.display = "none";
+
+                canvas.style.cursor = "default";
+
+                return;
+
+            }
+
+
+            tooltip.innerHTML =
+                `<strong>ครั้งที่ ${closestPoint.draw}</strong>` +
+                `<span>ค่าเฉลี่ย ${formatMean(closestPoint.value)}</span>`;
+
+
+            tooltip.style.display = "block";
+
+            canvas.style.cursor = "pointer";
+
+
+            const wrapperRect =
+                wrapper.getBoundingClientRect();
+
+            const relativeX =
+                event.clientX - wrapperRect.left;
+
+            const relativeY =
+                event.clientY - wrapperRect.top;
+
+
+            let left = relativeX + 14;
+
+            let top = relativeY -
+                tooltip.offsetHeight - 10;
+
+
+            if (
+                left + tooltip.offsetWidth >
+                wrapper.clientWidth - 8
+            ) {
+
+                left = relativeX -
+                    tooltip.offsetWidth - 14;
+
+            }
+
+
+            if (top < 8) {
+                top = relativeY + 14;
+            }
+
+
+            tooltip.style.left =
+                `${Math.max(8, left)}px`;
+
+            tooltip.style.top =
+                `${top}px`;
+
+        }
+    );
+
+
+    canvas.addEventListener(
+        "mouseleave",
+        () => {
+
+            tooltip.style.display = "none";
+
+            canvas.style.cursor = "default";
+
+        }
+    );
 
 }
 
@@ -2319,6 +2522,8 @@ drawCount = Number(
 createTableHeader();
 
 renderHistogram();
+
+setupDistributionTooltip();
 
 window.addEventListener(
     "resize",
