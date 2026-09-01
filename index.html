@@ -6,6 +6,10 @@
 
     <title>โปรแกรมสุ่มจับฉลาก</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&amp;family=Noto+Sans+Thai:wght@400;600;700&amp;display=swap" rel="stylesheet">
+
     <!-- SheetJS สำหรับ Export Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
@@ -17,9 +21,16 @@
 
         body {
             margin: 0;
-            font-family: Arial, "Noto Sans Thai", sans-serif;
+            font-family: "Noto Sans Thai", "Noto Sans", sans-serif;
             background: #f4f6f8;
             color: #222;
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font: inherit;
         }
 
         .container {
@@ -1755,7 +1766,7 @@ function renderHistogram() {
         density / maximumDensity * curveHeight;
 
 
-    context.font = "12px Arial, sans-serif";
+    context.font = '12px "Noto Sans Thai", "Noto Sans", sans-serif';
 
     context.lineWidth = 1;
 
@@ -1910,7 +1921,7 @@ function renderHistogram() {
 
     context.fillStyle = "#6d28d9";
 
-    context.font = "bold 12px Arial, sans-serif";
+    context.font = 'bold 12px "Noto Sans Thai", "Noto Sans", sans-serif';
 
     context.textAlign = "center";
 
@@ -1990,7 +2001,7 @@ function renderHistogram() {
 
         context.fillStyle = "#334155";
 
-        context.font = "bold 14px Arial, sans-serif";
+        context.font = 'bold 14px "Noto Sans Thai", "Noto Sans", sans-serif';
 
         context.textAlign = "center";
 
