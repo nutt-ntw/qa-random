@@ -291,6 +291,89 @@
             border-bottom: none;
         }
 
+        /* Histogram */
+
+        .histogram-section {
+            margin-top: 30px;
+        }
+
+        .histogram-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .histogram-header h3 {
+            margin: 0;
+            color: #1e293b;
+        }
+
+        .histogram-summary {
+            color: #1d4ed8;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .histogram-wrapper {
+            position: relative;
+            min-height: 380px;
+            padding: 14px;
+            background: linear-gradient(180deg, #f8fbff 0%, #f1f5ff 100%);
+            border: 1px solid #dbeafe;
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.08);
+        }
+
+        #histogramCanvas {
+            display: none;
+            width: 100%;
+            height: 350px;
+        }
+
+        .distribution-tooltip {
+            position: absolute;
+            z-index: 10;
+            display: none;
+            min-width: 130px;
+            padding: 9px 11px;
+            color: white;
+            background: rgba(15, 23, 42, 0.94);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.22);
+            font-size: 13px;
+            line-height: 1.45;
+            pointer-events: none;
+            backdrop-filter: blur(6px);
+        }
+
+        .distribution-tooltip strong,
+        .distribution-tooltip span {
+            display: block;
+        }
+
+        .distribution-tooltip span {
+            color: #bfdbfe;
+        }
+
+        .histogram-note {
+            margin: 12px 0 0;
+            padding: 10px 12px;
+            color: #64748b;
+            background: #f8fafc;
+            border-left: 3px solid #60a5fa;
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
         .empty {
             color: #999;
             text-align: center;
@@ -488,7 +571,11 @@
 
         <!-- ประวัติ -->
 
-        <div class="history-section">
+        <div
+            class="history-section"
+            id="historySection"
+            hidden
+        >
 
             <div class="history-header">
 
@@ -548,6 +635,57 @@
                 </table>
 
             </div>
+
+        </div>
+
+
+        <!-- Histogram ค่าเฉลี่ย -->
+
+        <div class="histogram-section">
+
+            <div class="histogram-header">
+
+                <h3>
+                    📈 Sampling Distribution ของค่าเฉลี่ย
+                </h3>
+
+                <div
+                    class="histogram-summary"
+                    id="histogramSummary"
+                >
+                    ยังไม่มีข้อมูล
+                </div>
+
+            </div>
+
+
+            <div class="histogram-wrapper">
+
+                <canvas
+                    id="histogramCanvas"
+                    role="img"
+                    aria-label="กราฟเส้นโค้งและจุด แสดง sampling distribution ของค่าเฉลี่ยแต่ละรอบ"
+                ></canvas>
+
+                <div
+                    class="distribution-tooltip"
+                    id="distributionTooltip"
+                    role="tooltip"
+                ></div>
+
+                <div
+                    class="empty"
+                    id="histogramEmpty"
+                >
+                    เริ่มสุ่มเพื่อดูการกระจายของค่าเฉลี่ย
+                </div>
+
+            </div>
+
+            <p class="histogram-note">
+                จุดสีส้มแต่ละจุดคือค่าเฉลี่ยจริงของหนึ่งรอบ
+                ส่วนเส้นโค้งแสดงความหนาแน่นโดยประมาณของ sampling distribution
+            </p>
 
         </div>
 
@@ -817,6 +955,10 @@ function startDrawing() {
         .innerHTML = "";
 
 
+    document.getElementById("historySection")
+        .hidden = false;
+
+
     /*
         เริ่มสุ่ม
     */
@@ -912,7 +1054,9 @@ function drawNext() {
 
         draw: currentDraw,
 
-        results: selected
+        results: selected,
+
+        mean: calculateMean(selected)
 
     });
 
@@ -930,8 +1074,12 @@ function drawNext() {
 
     addHistoryRow(
         currentDraw,
-        selected
+        selected,
+        historyData[historyData.length - 1].mean
     );
+
+
+    renderHistogram();
 
 
     /*
@@ -1011,6 +1159,15 @@ function createTableHeader() {
     const thCount =
         document.createElement("th");
 
+
+    const thMean =
+        document.createElement("th");
+
+    thMean.innerText =
+        "ค่าเฉลี่ย";
+
+    header.appendChild(thMean);
+
     thCount.innerText =
         "จำนวนใบ";
 
@@ -1028,7 +1185,8 @@ function createTableHeader() {
 
 function addHistoryRow(
     drawNumber,
-    selected
+    selected,
+    mean
 ) {
 
     const tbody =
@@ -1072,6 +1230,19 @@ function addHistoryRow(
 
 
     /*
+        ค่าเฉลี่ยของรอบ
+    */
+
+    const meanCell =
+        document.createElement("td");
+
+    meanCell.innerText =
+        formatMean(mean);
+
+    row.appendChild(meanCell);
+
+
+    /*
         จำนวนใบ
     */
 
@@ -1085,6 +1256,692 @@ function addHistoryRow(
 
 
     tbody.appendChild(row);
+
+}
+
+
+
+/*
+==================================================
+คำนวณค่าเฉลี่ยและ Histogram
+==================================================
+*/
+
+function calculateMean(values) {
+
+    return values.reduce(
+        (sum, value) => sum + value,
+        0
+    ) / values.length;
+
+}
+
+
+function formatMean(value) {
+
+    return value
+        .toFixed(4)
+        .replace(/\.?0+$/, "");
+
+}
+
+
+function buildDensity(values) {
+
+    if (values.length === 0) {
+        return [];
+    }
+
+
+    const sampleCount = 180;
+
+    const minimum = 1;
+
+    const maximum = 5;
+
+
+    const mean = calculateMean(values);
+
+    const variance = values.reduce(
+        (sum, value) =>
+            sum + Math.pow(value - mean, 2),
+        0
+    ) / values.length;
+
+    const standardDeviation =
+        Math.sqrt(variance);
+
+
+    /* Silverman's rule พร้อมขอบเขตสำหรับข้อมูลช่วง 1 - 5 */
+    const bandwidth = Math.min(
+        0.55,
+        Math.max(
+            0.1,
+            1.06 * standardDeviation *
+                Math.pow(values.length, -0.2)
+        )
+    );
+
+
+    return Array.from(
+        { length: sampleCount },
+        (_, index) => {
+
+            const x = minimum +
+                index / (sampleCount - 1) *
+                (maximum - minimum);
+
+
+            const density = values.reduce(
+                (sum, value) => {
+
+                    const distance =
+                        (x - value) / bandwidth;
+
+                    return sum +
+                        Math.exp(-0.5 * distance * distance);
+
+                },
+                0
+            ) / (
+                values.length *
+                bandwidth *
+                Math.sqrt(2 * Math.PI)
+            );
+
+            return { x, density };
+        }
+    );
+
+}
+
+
+function renderHistogram() {
+
+    const canvas =
+        document.getElementById("histogramCanvas");
+
+    const empty =
+        document.getElementById("histogramEmpty");
+
+    const summary =
+        document.getElementById("histogramSummary");
+
+
+    if (historyData.length === 0) {
+
+        canvas.style.display = "none";
+
+        canvas.distributionPoints = [];
+
+        empty.style.display = "block";
+
+        document.getElementById("distributionTooltip")
+            .style.display = "none";
+
+        summary.innerText = "ยังไม่มีข้อมูล";
+
+        return;
+
+    }
+
+
+    const means = historyData.map(
+        item => item.mean
+    );
+
+    const densityPoints = buildDensity(means);
+
+
+    empty.style.display = "none";
+
+    canvas.style.display = "block";
+
+
+    const width = Math.max(
+        canvas.clientWidth,
+        640
+    );
+
+    const height = 350;
+
+    const pixelRatio =
+        window.devicePixelRatio || 1;
+
+
+    canvas.width = width * pixelRatio;
+
+    canvas.height = height * pixelRatio;
+
+
+    const context =
+        canvas.getContext("2d");
+
+    context.setTransform(
+        pixelRatio,
+        0,
+        0,
+        pixelRatio,
+        0,
+        0
+    );
+
+    context.clearRect(0, 0, width, height);
+
+
+    const padding = {
+        top: 45,
+        right: 24,
+        bottom: 58,
+        left: 60
+    };
+
+    const chartWidth =
+        width - padding.left - padding.right;
+
+    const chartHeight =
+        height - padding.top - padding.bottom;
+
+    const overallMean = calculateMean(means);
+
+    const maximumDensity = Math.max(
+        ...densityPoints.map(point => point.density)
+    );
+
+    const baseline =
+        padding.top + chartHeight;
+
+    const curveHeight =
+        chartHeight - 25;
+
+
+    const toX = value =>
+        padding.left +
+        (value - 1) / 4 * chartWidth;
+
+    const toY = density =>
+        baseline -
+        density / maximumDensity * curveHeight;
+
+
+    context.font = "12px Arial, sans-serif";
+
+    context.lineWidth = 1;
+
+
+    /* เส้น Grid */
+    for (
+        let step = 0;
+        step <= 4;
+        step++
+    ) {
+
+        const y = baseline -
+            step / 4 * curveHeight;
+
+        context.strokeStyle = step === 0
+            ? "#94a3b8"
+            : "#dbeafe";
+
+        context.beginPath();
+
+        context.moveTo(padding.left, y);
+
+        context.lineTo(
+            padding.left + chartWidth,
+            y
+        );
+
+        context.stroke();
+
+    }
+
+
+    /* แกน Y */
+    context.strokeStyle = "#94a3b8";
+
+    context.beginPath();
+
+    context.moveTo(padding.left, padding.top);
+
+    context.lineTo(padding.left, baseline);
+
+    context.stroke();
+
+
+    /* พื้นที่ใต้เส้น Density */
+    const areaGradient =
+        context.createLinearGradient(
+            0,
+            padding.top,
+            0,
+            baseline
+        );
+
+    areaGradient.addColorStop(
+        0,
+        "rgba(37, 99, 235, 0.34)"
+    );
+
+    areaGradient.addColorStop(
+        1,
+        "rgba(96, 165, 250, 0.04)"
+    );
+
+
+    context.beginPath();
+
+    context.moveTo(
+        toX(densityPoints[0].x),
+        baseline
+    );
+
+    densityPoints.forEach(
+        point => {
+            context.lineTo(
+                toX(point.x),
+                toY(point.density)
+            );
+        }
+    );
+
+    context.lineTo(
+        toX(densityPoints[densityPoints.length - 1].x),
+        baseline
+    );
+
+    context.closePath();
+
+    context.fillStyle = areaGradient;
+
+    context.fill();
+
+
+    /* เส้นโค้ง Sampling distribution */
+    context.save();
+
+    context.strokeStyle = "#2563eb";
+
+    context.lineWidth = 3;
+
+    context.lineJoin = "round";
+
+    context.lineCap = "round";
+
+    context.shadowColor = "rgba(37, 99, 235, 0.22)";
+
+    context.shadowBlur = 8;
+
+    context.beginPath();
+
+    densityPoints.forEach(
+        (point, index) => {
+
+            const x = toX(point.x);
+
+            const y = toY(point.density);
+
+            if (index === 0) {
+                context.moveTo(x, y);
+            } else {
+                context.lineTo(x, y);
+            }
+
+        }
+    );
+
+    context.stroke();
+
+    context.restore();
+
+
+    /* เส้นค่าเฉลี่ยรวม */
+    const overallMeanX = toX(overallMean);
+
+    context.save();
+
+    context.setLineDash([5, 5]);
+
+    context.strokeStyle = "#7c3aed";
+
+    context.lineWidth = 2;
+
+    context.beginPath();
+
+    context.moveTo(overallMeanX, padding.top);
+
+    context.lineTo(overallMeanX, baseline);
+
+    context.stroke();
+
+    context.restore();
+
+
+    context.fillStyle = "#6d28d9";
+
+    context.font = "bold 12px Arial, sans-serif";
+
+    context.textAlign = "center";
+
+    context.fillText(
+        `x̄ = ${formatMean(overallMean)}`,
+        overallMeanX,
+        padding.top - 12
+    );
+
+
+    /* จุดข้อมูลวางตามค่าเฉลี่ยจริงของแต่ละรอบ */
+    const pointLayers = new Map();
+
+    const renderedPoints = [];
+
+
+    historyData.forEach(
+        item => {
+
+            const value = item.mean;
+
+            const key = value.toFixed(4);
+
+            const layer = pointLayers.get(key) || 0;
+
+            pointLayers.set(key, layer + 1);
+
+
+            const pointY = baseline - 8 -
+                Math.min(layer, 5) * 9;
+
+
+            context.beginPath();
+
+            context.arc(
+                toX(value),
+                pointY,
+                4.5,
+                0,
+                Math.PI * 2
+            );
+
+            context.fillStyle = "#f97316";
+
+            context.fill();
+
+            context.strokeStyle = "white";
+
+            context.lineWidth = 1.5;
+
+            context.stroke();
+
+
+            renderedPoints.push({
+                x: toX(value),
+                y: pointY,
+                draw: item.draw,
+                value
+            });
+
+        }
+    );
+
+
+    canvas.distributionPoints = renderedPoints;
+
+
+    /* แกน X คงที่ 1 - 5 */
+    for (
+        let tick = 1;
+        tick <= 5;
+        tick++
+    ) {
+
+        const x = toX(tick);
+
+
+        context.fillStyle = "#334155";
+
+        context.font = "bold 14px Arial, sans-serif";
+
+        context.textAlign = "center";
+
+        context.fillText(
+            String(tick),
+            x,
+            baseline + 24
+        );
+
+    }
+
+
+    context.font = "12px Arial, sans-serif";
+
+    context.fillText(
+        "ค่าเฉลี่ยต่อรอบ",
+        padding.left + chartWidth / 2,
+        height - 5
+    );
+
+
+    context.save();
+
+    context.translate(16, padding.top + chartHeight / 2);
+
+    context.rotate(-Math.PI / 2);
+
+    context.textAlign = "center";
+
+    context.fillText(
+        "ความหนาแน่นโดยประมาณ",
+        0,
+        0
+    );
+
+    context.restore();
+
+
+    /* Legend */
+    context.fillStyle = "#f97316";
+
+    context.beginPath();
+
+    context.arc(
+        padding.left + chartWidth - 190,
+        20,
+        4,
+        0,
+        Math.PI * 2
+    );
+
+    context.fill();
+
+    context.fillStyle = "#475569";
+
+    context.textAlign = "left";
+
+    context.fillText(
+        "ค่าเฉลี่ยแต่ละรอบ",
+        padding.left + chartWidth - 180,
+        24
+    );
+
+    context.strokeStyle = "#2563eb";
+
+    context.lineWidth = 3;
+
+    context.beginPath();
+
+    context.moveTo(
+        padding.left + chartWidth - 85,
+        20
+    );
+
+    context.lineTo(
+        padding.left + chartWidth - 55,
+        20
+    );
+
+    context.stroke();
+
+    context.fillStyle = "#475569";
+
+    context.fillText(
+        "Density",
+        padding.left + chartWidth - 48,
+        24
+    );
+
+    summary.innerText =
+        `${means.length} รอบ | ค่าเฉลี่ยรวม ${formatMean(overallMean)}`;
+
+}
+
+
+
+/*
+==================================================
+Tooltip ของจุด Sampling distribution
+==================================================
+*/
+
+function setupDistributionTooltip() {
+
+    const canvas =
+        document.getElementById("histogramCanvas");
+
+    const tooltip =
+        document.getElementById("distributionTooltip");
+
+    const wrapper =
+        canvas.parentElement;
+
+
+    canvas.addEventListener(
+        "mousemove",
+        event => {
+
+            const points =
+                canvas.distributionPoints || [];
+
+            const canvasRect =
+                canvas.getBoundingClientRect();
+
+
+            const mouseX =
+                (event.clientX - canvasRect.left) *
+                canvas.width /
+                canvasRect.width /
+                (window.devicePixelRatio || 1);
+
+            const mouseY =
+                (event.clientY - canvasRect.top) *
+                canvas.height /
+                canvasRect.height /
+                (window.devicePixelRatio || 1);
+
+
+            let closestPoint = null;
+
+            let closestDistance = Infinity;
+
+
+            points.forEach(
+                point => {
+
+                    const distance = Math.hypot(
+                        point.x - mouseX,
+                        point.y - mouseY
+                    );
+
+
+                    if (
+                        distance < closestDistance
+                    ) {
+
+                        closestDistance = distance;
+
+                        closestPoint = point;
+
+                    }
+
+                }
+            );
+
+
+            if (
+                !closestPoint ||
+                closestDistance > 12
+            ) {
+
+                tooltip.style.display = "none";
+
+                canvas.style.cursor = "default";
+
+                return;
+
+            }
+
+
+            tooltip.innerHTML =
+                `<strong>ครั้งที่ ${closestPoint.draw}</strong>` +
+                `<span>ค่าเฉลี่ย ${formatMean(closestPoint.value)}</span>`;
+
+
+            tooltip.style.display = "block";
+
+            canvas.style.cursor = "pointer";
+
+
+            const wrapperRect =
+                wrapper.getBoundingClientRect();
+
+            const relativeX =
+                event.clientX - wrapperRect.left;
+
+            const relativeY =
+                event.clientY - wrapperRect.top;
+
+
+            let left = relativeX + 14;
+
+            let top = relativeY -
+                tooltip.offsetHeight - 10;
+
+
+            if (
+                left + tooltip.offsetWidth >
+                wrapper.clientWidth - 8
+            ) {
+
+                left = relativeX -
+                    tooltip.offsetWidth - 14;
+
+            }
+
+
+            if (top < 8) {
+                top = relativeY + 14;
+            }
+
+
+            tooltip.style.left =
+                `${Math.max(8, left)}px`;
+
+            tooltip.style.top =
+                `${top}px`;
+
+        }
+    );
+
+
+    canvas.addEventListener(
+        "mouseleave",
+        () => {
+
+            tooltip.style.display = "none";
+
+            canvas.style.cursor = "default";
+
+        }
+    );
 
 }
 
@@ -1195,7 +2052,7 @@ function exportCSV() {
     }
 
 
-    csv += ",จำนวนใบ\n";
+    csv += ",ค่าเฉลี่ย,จำนวนใบ\n";
 
 
     /*
@@ -1217,7 +2074,8 @@ function exportCSV() {
             );
 
 
-            csv += `,${item.results.length}\n`;
+            csv +=
+                `,${formatMean(item.mean)},${item.results.length}\n`;
 
         }
     );
@@ -1319,6 +2177,7 @@ function exportExcel() {
 
 
     header.push(
+        "ค่าเฉลี่ย",
         "จำนวนใบ"
     );
 
@@ -1348,6 +2207,7 @@ function exportExcel() {
 
 
             row.push(
+                item.mean,
                 item.results.length
             );
 
@@ -1438,7 +2298,7 @@ function copyToExcel() {
     }
 
 
-    text += "จำนวนใบ\n";
+    text += "ค่าเฉลี่ย\tจำนวนใบ\n";
 
 
     /*
@@ -1463,6 +2323,7 @@ function copyToExcel() {
 
 
             text +=
+                formatMean(item.mean) + "\t" +
                 item.results.length;
 
 
@@ -1580,12 +2441,19 @@ function resetGame() {
         .innerHTML = "";
 
 
+    document.getElementById("historySection")
+        .hidden = true;
+
+
     /*
         Message
     */
 
     document.getElementById("message")
         .innerText = "";
+
+
+    renderHistogram();
 
 }
 
@@ -1646,6 +2514,25 @@ function getFileDate() {
 
 
 updateTotalLabels();
+
+drawCount = Number(
+    document.getElementById("drawCount").value
+);
+
+createTableHeader();
+
+renderHistogram();
+
+setupDistributionTooltip();
+
+window.addEventListener(
+    "resize",
+    () => {
+        if (historyData.length > 0) {
+            renderHistogram();
+        }
+    }
+);
 
 </script>
 
