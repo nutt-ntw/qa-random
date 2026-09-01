@@ -67,7 +67,7 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .section-kicker { font-size: .68rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: #67e8f9; }
 .metric-pill { min-width: 7.5rem; border: 1px solid rgba(255,255,255,.09); border-radius: 1rem; background: rgba(255,255,255,.035); padding: .7rem .9rem; }
-.metric-pill span { display: block; font-size: .62rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #64748b; }
+.metric-pill span { display: block; font-size: .62rem; font-weight: 700; letter-spacing: .14em; color: #64748b; }
 .metric-pill strong { display: block; margin-top: .2rem; color: white; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
 
 .hero-orbit { animation: orbit-pulse 8s ease-in-out infinite; }
