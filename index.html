@@ -1935,6 +1935,35 @@ function renderHistogram() {
     /* จุดข้อมูลวางตามค่าเฉลี่ยจริงของแต่ละรอบ */
     const pointLayers = new Map();
 
+    const pointGroupSizes = new Map();
+
+    historyData.forEach(item => {
+
+        const key = item.mean.toFixed(4);
+
+        pointGroupSizes.set(
+            key,
+            (pointGroupSizes.get(key) || 0) + 1
+        );
+
+    });
+
+    const pointGap = isMobileChart ? 7 : 9;
+
+    const pointRadius = isMobileChart ? 3.5 : 4.5;
+
+    const availableStackHeight = Math.max(
+        42,
+        curveHeight * 0.7
+    );
+
+    const maximumRows = Math.max(
+        6,
+        Math.floor(
+            availableStackHeight / pointGap
+        )
+    );
+
     const renderedPoints = [];
 
 
@@ -1950,16 +1979,43 @@ function renderHistogram() {
             pointLayers.set(key, layer + 1);
 
 
+            const groupSize = pointGroupSizes.get(key);
+
+            const columnCount = Math.ceil(
+                groupSize / maximumRows
+            );
+
+            const column = Math.floor(
+                layer / maximumRows
+            );
+
+            const row = layer % maximumRows;
+
+            const groupHalfWidth =
+                (columnCount - 1) * pointGap / 2;
+
+            const centeredX = Math.min(
+                padding.left + chartWidth - groupHalfWidth - pointRadius,
+                Math.max(
+                    padding.left + groupHalfWidth + pointRadius,
+                    toX(value)
+                )
+            );
+
+            const pointX = centeredX +
+                (column - (columnCount - 1) / 2) * pointGap;
+
+
             const pointY = baseline - 8 -
-                Math.min(layer, 5) * 9;
+                row * pointGap;
 
 
             context.beginPath();
 
             context.arc(
-                toX(value),
+                pointX,
                 pointY,
-                4.5,
+                pointRadius,
                 0,
                 Math.PI * 2
             );
@@ -1976,7 +2032,7 @@ function renderHistogram() {
 
 
             renderedPoints.push({
-                x: toX(value),
+                x: pointX,
                 y: pointY,
                 draw: item.draw,
                 value
