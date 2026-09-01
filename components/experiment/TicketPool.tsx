@@ -26,7 +26,7 @@ export function TicketPool({ counts, errors, disabled, onChange }: TicketPoolPro
             <label key={value} className={`group relative rounded-2xl bg-gradient-to-br p-3 ring-1 transition focus-within:ring-2 ${ticketColors[value]}`}>
               <span className="mb-3 flex items-center justify-between">
                 <span className="grid size-9 place-items-center rounded-xl border border-white/15 bg-slate-950/55 text-lg font-bold">{value}</span>
-                <span className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-slate-400">tickets</span>
+                <span className="text-xs font-bold tracking-[0.08em] text-slate-300">กระดาษเลข {value}</span>
               </span>
               <span className="sr-only">จำนวนฉลากเลข {value}</span>
               <input

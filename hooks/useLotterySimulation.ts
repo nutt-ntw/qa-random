@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useReducedMotion } from "framer-motion";
 import { QUOTES } from "@/data/quotes";
 import { summarizeResults } from "@/lib/statistics";
 import { buildPopulation, DEFAULT_INPUTS, generateRound, validateConfiguration } from "@/lib/simulation";
@@ -20,7 +19,6 @@ export function useLotterySimulation() {
   const [completionQuote, setCompletionQuote] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const runningRef = useRef(false);
-  const reducedMotion = useReducedMotion();
 
   useEffect(() => () => abortControllerRef.current?.abort(), []);
 
@@ -49,11 +47,6 @@ export function useLotterySimulation() {
     setCompletionQuote(null);
     setErrors(EMPTY_ERRORS);
   }, [cancelCurrentRun, inputs.rounds]);
-
-  const prepareAnotherExperiment = useCallback(() => {
-    reset();
-    document.getElementById("experiment-controls")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
-  }, [reducedMotion, reset]);
 
   const setCount = useCallback((value: TicketValue, count: string) => {
     setInputs((current) => ({ ...current, counts: { ...current.counts, [value]: count } }));
@@ -121,7 +114,6 @@ export function useLotterySimulation() {
     setField,
     start,
     reset,
-    prepareAnotherExperiment,
   };
 }
 

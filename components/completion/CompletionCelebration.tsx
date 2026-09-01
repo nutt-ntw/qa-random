@@ -31,7 +31,7 @@ export function CompletionCelebration({ quote, rounds, onRunAgain, onShare }: Co
         <blockquote className="mx-auto my-6 max-w-3xl rounded-2xl border border-white/12 bg-white/8 px-5 py-5 text-center text-base font-semibold leading-8 text-white backdrop-blur-md sm:text-lg">“{quote}”</blockquote>
         <ExamCountdown />
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button tone="primary" icon={<ArrowIcon className="size-4" />} onClick={onRunAgain}>ทดลองอีกครั้ง</Button>
+          <Button tone="primary" icon={<ArrowIcon className="size-4" />} onClick={onRunAgain}>เริ่มสุ่มใหม่</Button>
           <Button icon={<ShareIcon className="size-4" />} onClick={onShare}>คัดลอก / แชร์สรุป</Button>
         </div>
       </div>
