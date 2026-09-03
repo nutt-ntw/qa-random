@@ -149,13 +149,13 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
     <Panel className="overflow-hidden p-4 sm:p-6" aria-labelledby="distribution-heading">
       <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div><p className="section-kicker">03 · Visualize</p><div className="mt-2 flex items-center gap-3"><ChartIcon className="size-6 text-cyan-300" /><h2 id="distribution-heading" className="text-xl font-bold text-white sm:text-2xl">Sampling Distribution ของค่าเฉลี่ย</h2></div></div>
-        <div className="rounded-full border border-violet-300/15 bg-violet-400/8 px-4 py-2 text-sm font-semibold text-violet-100">
+        <div className="w-fit max-w-full self-end rounded-full border border-violet-300/15 bg-violet-400/8 px-4 py-2 text-right text-sm font-semibold text-violet-100">
           {visibleResults.length ? `กำลังดู ${visibleResults.length.toLocaleString()} / ${results.length.toLocaleString()} รอบ · x̄ ${formatStatistic(summary.overallMean ?? 0)}` : "รอข้อมูลการทดลอง"}
         </div>
       </div>
 
       <motion.div initial={reducedMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="chart-shell relative overflow-hidden rounded-2xl border border-white/8 bg-slate-950/55" ref={wrapperRef}>
-        <div className="pointer-events-none absolute left-4 top-3 z-10 flex flex-wrap gap-3 text-[0.68rem] text-slate-400 sm:left-auto sm:right-5 sm:top-4 sm:text-xs" aria-hidden="true">
+        <div className="pointer-events-none absolute inset-x-4 top-3 z-10 flex flex-wrap justify-end gap-3 text-right text-[0.68rem] text-slate-400 sm:left-auto sm:right-5 sm:top-4 sm:text-xs" aria-hidden="true">
           <span className="inline-flex items-center gap-2"><i className="size-2.5 rounded-full bg-orange-400 ring-2 ring-orange-200/30" />ค่าเฉลี่ย/รอบ</span>
           <span className="inline-flex items-center gap-2"><i className="w-6 border-t-2 border-blue-400" />Density</span>
           <span className="inline-flex items-center gap-2"><i className="h-4 border-l-2 border-dashed border-violet-400" />Overall mean</span>
@@ -252,9 +252,13 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
         </div>
       ) : null}
 
-      <p id="chart-accessible-description" className="mt-4 rounded-xl border-l-2 border-cyan-400/70 bg-cyan-300/[0.035] px-4 py-3 text-sm leading-6 text-slate-400">
-        จุดสีส้มคือค่าเฉลี่ยจริงของแต่ละรอบ เลื่อน Timeline เพื่อดูการก่อตัวของกราฟย้อนหลัง เส้น Density เป็น kernel density estimate จากจุดที่แสดงอยู่ เพื่อช่วยมองรูปทรง ไม่ใช่ความน่าจะเป็นที่พิสูจน์แล้ว
-      </p>
+      <div id="chart-accessible-description" className="mt-4 rounded-xl border-l-2 border-cyan-400/70 bg-cyan-300/[0.035] px-4 py-3 text-sm leading-6 text-slate-400">
+        <ul className="list-disc space-y-1.5 pl-5 marker:text-cyan-300">
+          <li>จุดสีส้มคือค่าเฉลี่ยจริงของแต่ละรอบ</li>
+          <li>เลื่อน Timeline เพื่อดูการก่อตัวของกราฟย้อนหลัง</li>
+          <li>เส้น Density เป็น kernel density estimate จากจุดที่แสดงอยู่ เพื่อช่วยมองรูปทรง ไม่ใช่ความน่าจะเป็นที่พิสูจน์แล้ว</li>
+        </ul>
+      </div>
     </Panel>
   );
 }
@@ -349,7 +353,12 @@ function drawChart(canvas: HTMLCanvasElement, width: number, height: number, res
     context.fillText(String(tick), toX(tick), baseline + 24);
   }
   context.fillStyle = "#64748b";
-  context.fillText("ค่าเฉลี่ยต่อรอบ", padding.left + chartWidth / 2, height - 13);
+  const horizontalAxisLabel = "ค่าเฉลี่ยต่อรอบ";
+  const horizontalAxisLabelWidth = context.measureText(horizontalAxisLabel).width;
+  const plotCenterX = (padding.left + width - padding.right) / 2;
+  context.textAlign = "left";
+  context.fillText(horizontalAxisLabel, plotCenterX - horizontalAxisLabelWidth / 2, height - 13);
+  context.textAlign = "center";
   context.save();
   context.translate(mobile ? 12 : 16, padding.top + chartHeight / 2);
   context.rotate(-Math.PI / 2);
