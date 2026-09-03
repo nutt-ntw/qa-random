@@ -29,10 +29,41 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const renderedPointsRef = useRef<RenderedPoint[]>([]);
+  const previousResultCountRef = useRef(results.length);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [visibleRoundCount, setVisibleRoundCount] = useState(results.length);
+  const [isPlaying, setIsPlaying] = useState(false);
   const reducedMotion = useReducedMotion();
-  const summary = useMemo(() => summarizeResults(results), [results]);
+  const visibleResults = useMemo(() => results.slice(0, visibleRoundCount), [results, visibleRoundCount]);
+  const summary = useMemo(() => summarizeResults(visibleResults), [visibleResults]);
+  const latestVisibleResult = visibleResults.at(-1);
+
+  useEffect(() => {
+    const previousResultCount = previousResultCountRef.current;
+
+    setVisibleRoundCount((current) => {
+      if (results.length === 0) return 0;
+      if (current === 0 || current >= previousResultCount) return results.length;
+      return Math.min(current, results.length);
+    });
+
+    if (results.length === 0) setIsPlaying(false);
+    previousResultCountRef.current = results.length;
+  }, [results.length]);
+
+  useEffect(() => {
+    if (!isPlaying || results.length === 0) return;
+    if (visibleRoundCount >= results.length) return;
+
+    const timer = window.setTimeout(() => {
+      const nextRoundCount = Math.min(visibleRoundCount + 1, results.length);
+      setVisibleRoundCount(nextRoundCount);
+      if (nextRoundCount >= results.length) setIsPlaying(false);
+    }, 650);
+
+    return () => window.clearTimeout(timer);
+  }, [isPlaying, results.length, visibleRoundCount]);
 
   useEffect(() => {
     const wrapper = wrapperRef.current;
@@ -54,8 +85,25 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
     const canvas = canvasRef.current;
     if (!canvas || size.width === 0 || size.height === 0) return;
 
-    renderedPointsRef.current = drawChart(canvas, size.width, size.height, results);
-  }, [results, size]);
+    renderedPointsRef.current = drawChart(canvas, size.width, size.height, visibleResults);
+  }, [size, visibleResults]);
+
+  const showRoundCount = useCallback((count: number) => {
+    setIsPlaying(false);
+    setTooltip(null);
+    setVisibleRoundCount(Math.min(results.length, Math.max(1, count)));
+  }, [results.length]);
+
+  const togglePlayback = useCallback(() => {
+    setTooltip(null);
+    if (isPlaying) {
+      setIsPlaying(false);
+      return;
+    }
+
+    if (visibleRoundCount >= results.length) setVisibleRoundCount(1);
+    setIsPlaying(true);
+  }, [isPlaying, results.length, visibleRoundCount]);
 
   const handlePointerMove = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -102,7 +150,7 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
       <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div><p className="section-kicker">03 · Visualize</p><div className="mt-2 flex items-center gap-3"><ChartIcon className="size-6 text-cyan-300" /><h2 id="distribution-heading" className="text-xl font-bold text-white sm:text-2xl">Sampling Distribution ของค่าเฉลี่ย</h2></div></div>
         <div className="rounded-full border border-violet-300/15 bg-violet-400/8 px-4 py-2 text-sm font-semibold text-violet-100">
-          {results.length ? `${results.length.toLocaleString()} รอบ · x̄ ${formatStatistic(summary.overallMean ?? 0)}` : "รอข้อมูลการทดลอง"}
+          {visibleResults.length ? `กำลังดู ${visibleResults.length.toLocaleString()} / ${results.length.toLocaleString()} รอบ · x̄ ${formatStatistic(summary.overallMean ?? 0)}` : "รอข้อมูลการทดลอง"}
         </div>
       </div>
 
@@ -113,17 +161,17 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
           <span className="inline-flex items-center gap-2"><i className="h-4 border-l-2 border-dashed border-violet-400" />Overall mean</span>
         </div>
 
-        {results.length ? (
+        {visibleResults.length ? (
           <canvas
             ref={canvasRef}
-            data-point-count={results.length}
+            data-point-count={visibleResults.length}
             width={size.width}
             height={size.height}
             style={{ width: size.width ? `${size.width}px` : "100%", height: size.height ? `${size.height}px` : "300px" }}
             className="block max-w-full touch-none"
             onPointerMove={handlePointerMove}
             onPointerLeave={() => setTooltip(null)}
-            aria-label={`กราฟ sampling distribution จาก ${results.length} รอบ ค่าเฉลี่ยรวม ${formatStatistic(summary.overallMean ?? 0)} แกน X ตั้งแต่ 1 ถึง 5 ข้อมูลตัวเลขทั้งหมดอยู่ในตารางประวัติด้านล่าง`}
+            aria-label={`กราฟ sampling distribution แสดง ${visibleResults.length} จากทั้งหมด ${results.length} รอบ ค่าเฉลี่ยรวม ${formatStatistic(summary.overallMean ?? 0)} แกน X ตั้งแต่ 1 ถึง 5 ข้อมูลตัวเลขทั้งหมดอยู่ในตารางประวัติด้านล่าง`}
             aria-describedby="chart-accessible-description"
           />
         ) : (
@@ -140,8 +188,72 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
         ) : null}
       </motion.div>
 
+      {results.length ? (
+        <div className="mt-4 rounded-2xl border border-white/8 bg-slate-950/45 p-4 sm:p-5">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold tracking-[0.14em] text-cyan-300">TIMELINE · ดูการก่อตัวของกราฟ</p>
+              <p className="mt-1 text-sm leading-6 text-slate-400">เลื่อนเพื่อแสดงผลตั้งแต่รอบแรกจนถึงรอบที่ต้องการ</p>
+            </div>
+            <output className="w-fit rounded-xl border border-orange-300/15 bg-orange-400/8 px-3 py-2 text-sm font-semibold tabular-nums text-orange-100">
+              รอบที่ {latestVisibleResult?.round ?? 0} · ค่าเฉลี่ย {formatStatistic(latestVisibleResult?.mean ?? 0)}
+            </output>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => showRoundCount(visibleRoundCount - 1)}
+              disabled={visibleRoundCount <= 1}
+              className="grid size-11 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5 text-lg font-bold text-slate-200 transition hover:border-cyan-300/30 hover:bg-cyan-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35"
+              aria-label="แสดงรอบก่อนหน้า"
+            >
+              −
+            </button>
+            <label className="min-w-0 flex-1">
+              <span className="sr-only">จำนวนรอบที่แสดงบนกราฟ</span>
+              <input
+                type="range"
+                min="1"
+                max={results.length}
+                step="1"
+                value={Math.max(1, visibleRoundCount)}
+                onInput={(event) => showRoundCount(Number(event.currentTarget.value))}
+                className="timeline-range w-full"
+                style={{ "--timeline-progress": `${results.length > 1 ? ((visibleRoundCount - 1) / (results.length - 1)) * 100 : 100}%` } as React.CSSProperties}
+                aria-valuetext={`แสดง ${visibleRoundCount} จาก ${results.length} รอบ`}
+              />
+              <span className="mt-2 flex justify-between text-xs tabular-nums text-slate-500" aria-hidden="true">
+                <span>รอบ 1</span>
+                <span>{visibleRoundCount.toLocaleString()} / {results.length.toLocaleString()} จุด</span>
+                <span>รอบ {results.length.toLocaleString()}</span>
+              </span>
+            </label>
+            <button
+              type="button"
+              onClick={() => showRoundCount(visibleRoundCount + 1)}
+              disabled={visibleRoundCount >= results.length}
+              className="grid size-11 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5 text-lg font-bold text-slate-200 transition hover:border-cyan-300/30 hover:bg-cyan-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-35"
+              aria-label="แสดงรอบถัดไป"
+            >
+              +
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={togglePlayback}
+            disabled={results.length < 2}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-indigo-300/20 bg-indigo-400/10 px-4 text-sm font-semibold text-indigo-100 transition hover:border-indigo-300/35 hover:bg-indigo-400/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+          >
+            <span aria-hidden="true">{isPlaying ? "Ⅱ" : "▶"}</span>
+            {isPlaying ? "หยุดเล่นชั่วคราว" : visibleRoundCount >= results.length ? "เล่นย้อนหลังตั้งแต่รอบแรก" : "เล่นต่อทีละจุด"}
+          </button>
+        </div>
+      ) : null}
+
       <p id="chart-accessible-description" className="mt-4 rounded-xl border-l-2 border-cyan-400/70 bg-cyan-300/[0.035] px-4 py-3 text-sm leading-6 text-slate-400">
-        จุดสีส้มคือค่าเฉลี่ยจริงของแต่ละรอบ เส้น Density เป็น kernel density estimate เพื่อช่วยมองรูปทรง ไม่ใช่ความน่าจะเป็นที่พิสูจน์แล้ว ข้อมูลทุกจุดอ่านได้จากตารางประวัติ
+        จุดสีส้มคือค่าเฉลี่ยจริงของแต่ละรอบ เลื่อน Timeline เพื่อดูการก่อตัวของกราฟย้อนหลัง เส้น Density เป็น kernel density estimate จากจุดที่แสดงอยู่ เพื่อช่วยมองรูปทรง ไม่ใช่ความน่าจะเป็นที่พิสูจน์แล้ว
       </p>
     </Panel>
   );
