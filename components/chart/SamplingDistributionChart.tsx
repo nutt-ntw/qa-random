@@ -157,7 +157,7 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
       <motion.div initial={reducedMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="chart-shell relative overflow-hidden rounded-2xl border border-white/8 bg-slate-950/55" ref={wrapperRef}>
         <div className="pointer-events-none absolute inset-x-4 top-3 z-10 flex flex-wrap justify-end gap-3 text-right text-[0.68rem] text-slate-400 sm:left-auto sm:right-5 sm:top-4 sm:text-xs" aria-hidden="true">
           <span className="inline-flex items-center gap-2"><i className="size-2.5 rounded-full bg-orange-400 ring-2 ring-orange-200/30" />ค่าเฉลี่ย/รอบ</span>
-          <span className="inline-flex items-center gap-2"><i className="w-6 border-t-2 border-blue-400" />Density</span>
+          <span className="inline-flex items-center gap-2"><i className="w-6 border-t-2 border-blue-400" />Density shape</span>
           <span className="inline-flex items-center gap-2"><i className="h-4 border-l-2 border-dashed border-violet-400" />Overall mean</span>
         </div>
 
@@ -256,7 +256,7 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
         <ul className="list-disc space-y-1.5 pl-5 marker:text-cyan-300">
           <li>จุดสีส้มคือค่าเฉลี่ยจริงของแต่ละรอบ</li>
           <li>เลื่อน Timeline เพื่อดูการก่อตัวของกราฟย้อนหลัง</li>
-          <li>เส้น Density เป็น kernel density estimate จากจุดที่แสดงอยู่ เพื่อช่วยมองรูปทรง ไม่ใช่ความน่าจะเป็นที่พิสูจน์แล้ว</li>
+          <li>เส้น Density เป็น kernel density estimate จากจุดที่แสดงอยู่ โดยปรับความสูงสัมพัทธ์ตามยอดของกราฟเพื่อให้เห็นรูปทรงชัดเจน ไม่ใช่ความน่าจะเป็นที่พิสูจน์แล้ว</li>
         </ul>
       </div>
     </Panel>
@@ -282,7 +282,7 @@ function drawChart(canvas: HTMLCanvasElement, width: number, height: number, res
   const curveHeight = chartHeight * 0.78;
   const means = results.map((result) => result.mean);
   const density = buildDensity(means);
-  const maximumDensity = Math.max(...density.map((point) => point.density), 1);
+  const maximumDensity = Math.max(...density.map((point) => point.density), Number.EPSILON);
   const overallMean = summarizeResults(results).overallMean ?? 0;
   const toX = (value: number) => padding.left + ((value - X_MIN) / (X_MAX - X_MIN)) * chartWidth;
   const toY = (value: number) => baseline - (value / maximumDensity) * curveHeight;
@@ -362,7 +362,7 @@ function drawChart(canvas: HTMLCanvasElement, width: number, height: number, res
   context.save();
   context.translate(mobile ? 12 : 16, padding.top + chartHeight / 2);
   context.rotate(-Math.PI / 2);
-  context.fillText("ความหนาแน่นโดยประมาณ", 0, 0);
+  context.fillText("ความหนาแน่นสัมพัทธ์ (KDE)", 0, 0);
   context.restore();
 
   return renderedPoints;
