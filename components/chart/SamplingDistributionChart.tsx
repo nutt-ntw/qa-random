@@ -12,6 +12,7 @@ interface RenderedPoint {
   y: number;
   round: number;
   mean: number;
+  drawnValues: readonly number[];
   radius: number;
 }
 
@@ -20,6 +21,7 @@ interface TooltipState {
   top: number;
   round: number;
   mean: number;
+  drawnValues: string;
 }
 
 const X_MIN = 1;
@@ -105,7 +107,7 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
     setIsPlaying(true);
   }, [isPlaying, results.length, visibleRoundCount]);
 
-  const handlePointerMove = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+  const showTooltipAtPointer = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     const wrapper = wrapperRef.current;
     if (!canvas || !wrapper || renderedPointsRef.current.length === 0) return;
@@ -132,16 +134,20 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
     }
 
     const wrapperRect = wrapper.getBoundingClientRect();
-    const tooltipWidth = 156;
-    const tooltipHeight = 62;
+    const tooltipWidth = 190;
+    const tooltipHeight = 96;
     const desiredLeft = event.clientX - wrapperRect.left + 12;
     const desiredTop = event.clientY - wrapperRect.top - tooltipHeight - 10;
+    const drawnValues = closest.drawnValues.length > 8
+      ? `${closest.drawnValues.slice(0, 8).join(", ")} …`
+      : closest.drawnValues.join(", ");
 
     setTooltip({
       left: Math.min(Math.max(8, desiredLeft), wrapperRect.width - tooltipWidth - 8),
       top: Math.min(Math.max(8, desiredTop), wrapperRect.height - tooltipHeight - 8),
       round: closest.round,
       mean: closest.mean,
+      drawnValues,
     });
   }, [size]);
 
@@ -169,8 +175,11 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
             height={size.height}
             style={{ width: size.width ? `${size.width}px` : "100%", height: size.height ? `${size.height}px` : "300px" }}
             className="block max-w-full touch-none"
-            onPointerMove={handlePointerMove}
-            onPointerLeave={() => setTooltip(null)}
+            onPointerMove={showTooltipAtPointer}
+            onPointerDown={showTooltipAtPointer}
+            onPointerLeave={(event) => {
+              if (event.pointerType !== "touch") setTooltip(null);
+            }}
             aria-label={`กราฟ sampling distribution แสดง ${visibleResults.length} จากทั้งหมด ${results.length} รอบ ค่าเฉลี่ยรวม ${formatStatistic(summary.overallMean ?? 0)} แกน X ตั้งแต่ 1 ถึง 5 ข้อมูลตัวเลขทั้งหมดอยู่ในตารางประวัติด้านล่าง`}
             aria-describedby="chart-accessible-description"
           />
@@ -181,9 +190,10 @@ export function SamplingDistributionChart({ results }: { results: readonly DrawR
         )}
 
         {tooltip ? (
-          <div role="tooltip" className="pointer-events-none absolute z-20 w-[156px] rounded-xl border border-white/12 bg-slate-900/95 px-3 py-2.5 text-sm shadow-2xl backdrop-blur-xl" style={{ left: tooltip.left, top: tooltip.top }}>
+          <div role="tooltip" className="pointer-events-none absolute z-20 w-[190px] rounded-xl border border-white/12 bg-slate-900/95 px-3 py-2.5 text-sm shadow-2xl backdrop-blur-xl" style={{ left: tooltip.left, top: tooltip.top }}>
             <strong className="block text-white">ครั้งที่ {tooltip.round}</strong>
             <span className="mt-0.5 block text-cyan-200">ค่าเฉลี่ย {formatStatistic(tooltip.mean)}</span>
+            <span className="mt-1 block truncate text-xs text-slate-400">เลขที่สุ่มได้ {tooltip.drawnValues}</span>
           </div>
         ) : null}
       </motion.div>
@@ -376,8 +386,19 @@ function layoutPoints(results: readonly DrawResult[], toX: (value: number) => nu
   });
 
   const pointGap = mobile ? 6.5 : 8;
-  const stackHeight = Math.max(54, curveHeight * 0.62);
+  const stackHeight = Math.max(54, curveHeight - 18);
   const maximumRows = Math.max(8, Math.floor(stackHeight / pointGap));
+  const groupCenters = [...groups.values()]
+    .map((group) => toX(group[0].mean))
+    .sort((first, second) => first - second);
+  const minimumGroupGap = groupCenters.reduce((minimum, center, index) => {
+    if (index === 0) return minimum;
+    return Math.min(minimum, center - groupCenters[index - 1]);
+  }, Number.POSITIVE_INFINITY);
+  const preferredRadius = mobile ? 3.4 : 4.2;
+  const separatedRadius = Number.isFinite(minimumGroupGap)
+    ? Math.max(0.9, Math.min(preferredRadius, minimumGroupGap * 0.42))
+    : preferredRadius;
   const rendered: RenderedPoint[] = [];
 
   for (const group of groups.values()) {
@@ -385,7 +406,7 @@ function layoutPoints(results: readonly DrawResult[], toX: (value: number) => nu
     const columns = Math.ceil(group.length / maximumRows);
     const maximumGroupWidth = Math.min(52, Math.max(0, (right - left) / Math.max(groups.size, 5) * 0.72));
     const columnGap = columns > 1 ? Math.min(pointGap, maximumGroupWidth / (columns - 1)) : 0;
-    const radius = Math.max(1.25, Math.min(mobile ? 3.4 : 4.2, pointGap * 0.43, columnGap ? columnGap * 0.43 : 4.2));
+    const radius = Math.max(0.9, Math.min(separatedRadius, pointGap * 0.43, columnGap ? columnGap * 0.43 : preferredRadius));
     const halfWidth = ((columns - 1) * columnGap) / 2;
     const centerX = Math.min(right - halfWidth - radius, Math.max(left + halfWidth + radius, toX(mean)));
 
@@ -397,6 +418,7 @@ function layoutPoints(results: readonly DrawResult[], toX: (value: number) => nu
         y: baseline - 8 - row * pointGap,
         round: result.round,
         mean: result.mean,
+        drawnValues: result.results,
         radius,
       });
     });
