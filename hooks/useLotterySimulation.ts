@@ -7,7 +7,7 @@ import { buildPopulation, DEFAULT_INPUTS, generateRound, validateConfiguration }
 import { TICKET_VALUES, type DrawResult, type TicketInputs, type TicketValue, type ValidationErrors } from "@/types";
 
 const EMPTY_ERRORS: ValidationErrors = { counts: {} };
-const ROUND_DELAY_MS = 1_000;
+const ROUND_DELAY_MS = 500;
 
 export function useLotterySimulation() {
   const [inputs, setInputs] = useState<TicketInputs>(DEFAULT_INPUTS);
